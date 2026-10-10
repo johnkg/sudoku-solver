@@ -406,10 +406,13 @@ class _ToolBar extends StatelessWidget {
           ),
           Expanded(
             child: _ToolButton(
-              tooltip: 'Fill in all notes',
+              tooltip: controller.notesFilled
+                  ? 'Hide all notes'
+                  : 'Show all notes',
               label: 'Auto',
               icon: Icons.auto_fix_high,
-              onPressed: controller.fillNotes,
+              badge: controller.notesFilled ? 'ON' : 'OFF',
+              onPressed: controller.toggleAutoNotes,
             ),
           ),
           Expanded(
