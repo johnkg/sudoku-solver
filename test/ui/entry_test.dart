@@ -89,46 +89,58 @@ void main() {
   });
 
   group('editing notes', () {
-    setUp(() => c.setMode(EntryMode.notes));
-
-    test('a wrong candidate can be removed', () {
-      c.enter(wrongButLegal);
-      expect(hasDigit(c.board.candidates[cell], wrongButLegal), isFalse);
-      expect(c.mistakes, 0);
-      expect(c.moveCount, 1);
+    test('notes start empty and the board still has its candidates', () {
+      expect(c.marks.every((m) => m == 0), isTrue);
+      expect(c.board.candidates[cell], isNot(0));
     });
 
-    test('the right digit cannot be removed', () {
+    test('a digit is added as a note and toggled off again', () {
+      c.setMode(EntryMode.notes);
+      c.enter(wrongButLegal);
+      expect(hasDigit(c.marks[cell], wrongButLegal), isTrue);
+      expect(c.mistakes, 0);
+      expect(c.moveCount, 0);
+      expect(c.canUndo, isTrue);
+      c.enter(wrongButLegal);
+      expect(c.marks[cell], 0);
+    });
+
+    test('undo takes a note back', () {
+      c.setMode(EntryMode.notes);
       c.enter(right);
-      expect(hasDigit(c.board.candidates[cell], right), isTrue);
-      expect(c.mistakes, 1);
-      expect(c.message, startsWith('Not safe'));
+      c.undo();
+      expect(c.marks[cell], 0);
     });
 
-    test('a removed note can be added back', () {
+    test('erase clears the notes of a cell', () {
+      c.setMode(EntryMode.notes);
+      c.enter(right);
       c.enter(wrongButLegal);
-      c.enter(wrongButLegal);
-      expect(hasDigit(c.board.candidates[cell], wrongButLegal), isTrue);
-      expect(c.mistakes, 0);
-      expect(c.moveCount, 2);
+      c.erase();
+      expect(c.marks[cell], 0);
     });
 
-    test('a note a peer already rules out cannot be added', () {
-      final used = [
-        for (final p in Board.peers[cell])
-          if (c.board.values[p] != 0) c.board.values[p],
-      ].first;
-      c.enter(used);
-      expect(c.message, startsWith('There is already a $used in'));
-      expect(hasDigit(c.board.candidates[cell], used), isFalse);
-      expect(c.mistakes, 0);
+    test('fill notes copies the candidates into empty cells', () {
+      c.fillNotes();
+      for (var i = 0; i < 81; i++) {
+        expect(c.marks[i], c.board.values[i] == 0 ? c.board.candidates[i] : 0);
+      }
+      c.fillNotes();
+      expect(c.message, 'Notes are already filled in.');
+      c.undo();
+      expect(c.marks.every((m) => m == 0), isTrue);
     });
 
-    test('a ruled-out digit can no longer be placed', () {
-      c.enter(wrongButLegal);
-      c.setMode(EntryMode.place);
-      c.enter(wrongButLegal);
-      expect(c.message, startsWith('You already ruled out'));
+    test('placing a digit clears it from the notes around it', () {
+      c.fillNotes();
+      final peer = Board.peers[cell].firstWhere(
+        (p) => hasDigit(c.marks[p], right),
+      );
+      c.enter(right);
+      expect(c.marks[cell], 0);
+      expect(hasDigit(c.marks[peer], right), isFalse);
+      c.undo();
+      expect(hasDigit(c.marks[peer], right), isTrue);
     });
   });
 

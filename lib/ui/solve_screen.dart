@@ -84,7 +84,7 @@ class _SolveScreenState extends State<SolveScreen> {
   }
 
   String _signature() =>
-      '${controller.moveCount}/${controller.mistakes}/${controller.hintsUsed}/'
+      '${controller.changeCount}/${controller.mistakes}/${controller.hintsUsed}/'
       '${controller.movesShown}';
 
   /// Saves the game when it changed, and records the solve when it is done.
@@ -122,7 +122,7 @@ class _SolveScreenState extends State<SolveScreen> {
     final signature = _signature();
     if (signature == _savedSignature) return;
     _savedSignature = signature;
-    if (controller.moveCount == 0 &&
+    if (controller.changeCount == 0 &&
         controller.mistakes == 0 &&
         controller.hintsUsed == 0) {
       store.clearGame(widget.puzzle.id);
@@ -198,6 +198,7 @@ class _SolveScreenState extends State<SolveScreen> {
                   step: controller.shown,
                   selected: controller.selected,
                   wrong: controller.wrong,
+                  marks: controller.marks,
                   onCellTap: controller.select,
                 );
                 final status = _StatusLine(controller: controller);
@@ -344,7 +345,7 @@ class _StatusLine extends StatelessWidget {
             : controller.mode == EntryMode.place
             ? 'Pick the digit that goes in '
                   '${Board.cellName(controller.selected!)}.'
-            : 'Tap a digit to add or remove it as a note in '
+            : 'Tap digits to add or remove notes in '
                   '${Board.cellName(controller.selected!)}.');
 
     return Padding(
@@ -401,6 +402,14 @@ class _ToolBar extends StatelessWidget {
               badge: notes ? 'ON' : 'OFF',
               onPressed: () =>
                   controller.setMode(notes ? EntryMode.place : EntryMode.notes),
+            ),
+          ),
+          Expanded(
+            child: _ToolButton(
+              tooltip: 'Fill in all notes',
+              label: 'Auto',
+              icon: Icons.auto_fix_high,
+              onPressed: controller.fillNotes,
             ),
           ),
           Expanded(
