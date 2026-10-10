@@ -84,7 +84,7 @@ class _SolveScreenState extends State<SolveScreen> {
   }
 
   String _signature() =>
-      '${controller.moveCount}/${controller.mistakes}/${controller.hintsUsed}/'
+      '${controller.changeCount}/${controller.mistakes}/${controller.hintsUsed}/'
       '${controller.movesShown}';
 
   /// Saves the game when it changed, and records the solve when it is done.
@@ -122,7 +122,7 @@ class _SolveScreenState extends State<SolveScreen> {
     final signature = _signature();
     if (signature == _savedSignature) return;
     _savedSignature = signature;
-    if (controller.moveCount == 0 &&
+    if (controller.changeCount == 0 &&
         controller.mistakes == 0 &&
         controller.hintsUsed == 0) {
       store.clearGame(widget.puzzle.id);
@@ -161,6 +161,17 @@ class _SolveScreenState extends State<SolveScreen> {
           title: Text(widget.puzzle.title),
           actions: [
             IconButton(
+              tooltip: controller.showCandidates
+                  ? 'Hide pencil marks'
+                  : 'Show pencil marks',
+              icon: Icon(
+                controller.showCandidates
+                    ? Icons.grid_view
+                    : Icons.grid_view_outlined,
+              ),
+              onPressed: controller.toggleCandidates,
+            ),
+            IconButton(
               tooltip: 'Start over',
               icon: const Icon(Icons.restart_alt),
               onPressed: controller.canUndo || controller.pending != null
@@ -186,6 +197,8 @@ class _SolveScreenState extends State<SolveScreen> {
                   showCandidates: controller.showCandidates,
                   step: controller.shown,
                   selected: controller.selected,
+                  wrong: controller.wrong,
+                  marks: controller.marks,
                   onCellTap: controller.select,
                 );
                 final status = _StatusLine(controller: controller);
@@ -332,7 +345,7 @@ class _StatusLine extends StatelessWidget {
             : controller.mode == EntryMode.place
             ? 'Pick the digit that goes in '
                   '${Board.cellName(controller.selected!)}.'
-            : 'Pick a candidate to rule out in '
+            : 'Tap digits to add or remove notes in '
                   '${Board.cellName(controller.selected!)}.');
 
     return Padding(
@@ -359,7 +372,7 @@ class _ToolBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (controller.solved) return const SizedBox.shrink();
-    final removing = controller.mode == EntryMode.remove;
+    final notes = controller.mode == EntryMode.notes;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -375,26 +388,28 @@ class _ToolBar extends StatelessWidget {
           ),
           Expanded(
             child: _ToolButton(
-              tooltip: controller.showCandidates
-                  ? 'Hide pencil marks'
-                  : 'Show pencil marks',
-              label: 'Notes',
-              icon: Icons.edit_outlined,
-              badge: controller.showCandidates ? 'ON' : 'OFF',
-              onPressed: controller.toggleCandidates,
+              tooltip: 'Erase',
+              label: 'Erase',
+              icon: Icons.backspace_outlined,
+              onPressed: controller.erase,
             ),
           ),
           Expanded(
             child: _ToolButton(
-              tooltip: removing
-                  ? 'Switch to placing digits'
-                  : 'Switch to removing candidates',
-              label: 'Remove',
-              icon: Icons.block,
-              badge: removing ? 'ON' : 'OFF',
-              onPressed: () => controller.setMode(
-                removing ? EntryMode.place : EntryMode.remove,
-              ),
+              tooltip: notes ? 'Switch to placing digits' : 'Edit notes',
+              label: 'Notes',
+              icon: Icons.edit_outlined,
+              badge: notes ? 'ON' : 'OFF',
+              onPressed: () =>
+                  controller.setMode(notes ? EntryMode.place : EntryMode.notes),
+            ),
+          ),
+          Expanded(
+            child: _ToolButton(
+              tooltip: 'Fill in all notes',
+              label: 'Auto',
+              icon: Icons.auto_fix_high,
+              onPressed: controller.fillNotes,
             ),
           ),
           Expanded(

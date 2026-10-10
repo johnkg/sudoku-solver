@@ -12,6 +12,8 @@ class BoardView extends StatelessWidget {
     this.step,
     this.candidateFocus,
     this.selected,
+    this.wrong = const {},
+    this.marks,
     this.onCellTap,
   });
 
@@ -26,6 +28,14 @@ class BoardView extends StatelessWidget {
 
   /// The cell the player has selected, if any.
   final int? selected;
+
+  /// Wrong digits the player typed, drawn in red.
+  final Map<int, int> wrong;
+
+  /// The player's own notes, a digit bit mask per cell. When set they are
+  /// drawn instead of the board's candidates, except in cells a hint is
+  /// about, which show the real candidates.
+  final List<int>? marks;
 
   /// Called with a cell index when the player taps the board.
   final ValueChanged<int>? onCellTap;
@@ -59,6 +69,8 @@ class BoardView extends StatelessWidget {
                 step: step,
                 candidateFocus: candidateFocus,
                 selected: selected,
+                wrong: wrong,
+                marks: marks,
                 scheme: Theme.of(context).colorScheme,
               ),
             ),
@@ -77,6 +89,8 @@ class _BoardPainter extends CustomPainter {
     required this.step,
     required this.candidateFocus,
     required this.selected,
+    required this.wrong,
+    required this.marks,
     required this.scheme,
   });
 
@@ -86,6 +100,8 @@ class _BoardPainter extends CustomPainter {
   final Step? step;
   final Step? candidateFocus;
   final int? selected;
+  final Map<int, int> wrong;
+  final List<int>? marks;
   final ColorScheme scheme;
 
   @override
@@ -173,6 +189,17 @@ class _BoardPainter extends CustomPainter {
         );
         continue;
       }
+      if (wrong.containsKey(c)) {
+        _text(
+          canvas,
+          '${wrong[c]}',
+          rect.center,
+          fontSize: cell * 0.62,
+          color: scheme.error,
+          weight: FontWeight.w500,
+        );
+        continue;
+      }
       if (placed.containsKey(c)) {
         _text(
           canvas,
@@ -187,7 +214,14 @@ class _BoardPainter extends CustomPainter {
       if (!showCandidates) continue;
 
       final gone = removed[c] ?? const <int>[];
-      for (final digit in digitsOf(board.candidates[c])) {
+      final own = marks;
+      final mask = own == null
+          ? board.candidates[c]
+          : own[c] |
+                (highlighted.contains(c) || removed.containsKey(c)
+                    ? board.candidates[c]
+                    : 0);
+      for (final digit in digitsOf(mask)) {
         if (focusCells != null &&
             !(focusCells.contains(c) && focusDigits!.contains(digit))) {
           continue;

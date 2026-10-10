@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../engine/engine.dart';
 import 'hint_ladder.dart';
 
-/// What a digit button does to the selected cell.
-enum EntryMode { place, remove }
+/// What a digit button does to the selected cell: place the digit, or toggle
+/// it as a note (pencil mark).
+enum EntryMode { place, notes }
 
 /// State of one puzzle session: the board, the player's moves, hints from the
 /// solver, and history for undo.
@@ -32,9 +33,16 @@ class SolveController extends ChangeNotifier {
   final Board solution;
   final Set<int> givens;
 
-  /// Boards before each move, newest last. [technique] is set when the move
-  /// was a solver step the player applied.
-  final List<({Board board, Technique? technique})> _history = [];
+  /// Boards and notes before each change, newest last. [technique] is set
+  /// when the change was a solver step the player applied, [note] when it
+  /// only edited notes.
+  final List<({Board board, List<int> marks, Technique? technique, bool note})>
+  _history = [];
+
+  /// The player's own notes: a bit mask of digits per cell, empty at the
+  /// start. They are separate from the board's candidates, which the solver
+  /// and hints work from.
+  List<int> marks = List.filled(81, 0);
 
   Step? _pending;
   int _hintLevel = 0;
@@ -42,6 +50,12 @@ class SolveController extends ChangeNotifier {
   bool showCandidates = true;
 
   int? selected;
+
+  /// Wrong digits the player typed, by cell. They are shown in red and kept
+  /// off the board, so the solver and hints keep working. Placing the right
+  /// digit, erasing, undo and restart clear them.
+  final Map<int, int> wrong = {};
+
   EntryMode mode = EntryMode.place;
   int mistakes = 0;
   int hintsUsed = 0;
@@ -79,8 +93,12 @@ class SolveController extends ChangeNotifier {
   bool get solved => _board.isSolved;
   bool get canUndo => _history.isNotEmpty;
 
-  /// Moves made so far, by the player or from solver steps.
-  int get moveCount => _history.length;
+  /// Moves made so far, by the player or from solver steps. Note edits do
+  /// not count.
+  int get moveCount => _history.where((m) => !m.note).length;
+
+  /// Moves and note edits, for knowing when the game needs saving.
+  int get changeCount => _history.length;
 
   /// Techniques of the solver steps the player applied, oldest first.
   List<Technique> get applied => [
@@ -121,6 +139,9 @@ class SolveController extends ChangeNotifier {
     if (step == null) return;
     _push(step.technique);
     _board.applyStep(step);
+    for (final p in step.placements) {
+      _clearMarksAround(p.cell, p.digit);
+    }
     _dropHint();
     notifyListeners();
   }
@@ -169,19 +190,61 @@ class SolveController extends ChangeNotifier {
     } else if (mode == EntryMode.place) {
       _place(cell, digit);
     } else {
-      _remove(cell, digit);
+      _toggleNote(cell, digit);
     }
     notifyListeners();
+  }
+
+  /// Clears a wrong digit, or else the notes, from the selected cell.
+  void erase() {
+    final cell = selected;
+    if (cell != null && wrong.remove(cell) != null) {
+      _clearMessage();
+    } else if (cell != null && _board.values[cell] == 0 && marks[cell] != 0) {
+      _push(null, note: true);
+      marks[cell] = 0;
+      _clearMessage();
+    } else {
+      _say('Nothing to erase.');
+    }
+    notifyListeners();
+  }
+
+  /// Fills every empty cell's notes with what the board allows there.
+  void fillNotes() {
+    final next = [
+      for (var c = 0; c < 81; c++)
+        _board.values[c] == 0 ? _board.candidates[c] : 0,
+    ];
+    if (listEquals(next, marks)) {
+      _say('Notes are already filled in.');
+    } else {
+      _push(null, note: true);
+      marks = next;
+      _clearMessage();
+    }
+    notifyListeners();
+  }
+
+  /// Drops [digit] from the notes of [cell] and its peers once it is placed.
+  void _clearMarksAround(int cell, int digit) {
+    marks[cell] = 0;
+    final bit = digitBit(digit);
+    for (final peer in Board.peers[cell]) {
+      marks[peer] &= ~bit;
+    }
   }
 
   void _place(int cell, int digit) {
     if (!hasDigit(_board.candidates[cell], digit)) {
       mistakes++;
+      wrong[cell] = digit;
       _say(_whyNotCandidate(cell, digit), error: true);
       return;
     }
     if (solution.values[cell] != digit) {
       mistakes++;
+      wrong[cell] = digit;
       _say(
         'Not $digit. It breaks no rule yet, but the puzzle cannot be '
         'finished with $digit in ${Board.cellName(cell)}.',
@@ -191,29 +254,17 @@ class SolveController extends ChangeNotifier {
     }
     _push(null);
     _board.place(cell, digit);
+    _clearMarksAround(cell, digit);
+    wrong.remove(cell);
     _dropHint();
     _stuck = false;
     _clearMessage();
   }
 
-  void _remove(int cell, int digit) {
-    if (!hasDigit(_board.candidates[cell], digit)) {
-      _say('$digit is not a candidate in ${Board.cellName(cell)}.');
-      return;
-    }
-    if (solution.values[cell] == digit) {
-      mistakes++;
-      _say(
-        'Not safe: removing $digit from ${Board.cellName(cell)} would make '
-        'the puzzle impossible.',
-        error: true,
-      );
-      return;
-    }
-    _push(null);
-    _board.eliminate(cell, digit);
-    _dropHint();
-    _stuck = false;
+  /// Notes mode: adds the digit as a note in the cell, or removes it.
+  void _toggleNote(int cell, int digit) {
+    _push(null, note: true);
+    marks[cell] ^= digitBit(digit);
     _clearMessage();
   }
 
@@ -226,13 +277,19 @@ class SolveController extends ChangeNotifier {
     return 'You already ruled out $digit in ${Board.cellName(cell)}.';
   }
 
-  void _push(Technique? technique) =>
-      _history.add((board: _board.copy(), technique: technique));
+  void _push(Technique? technique, {bool note = false}) => _history.add((
+    board: _board.copy(),
+    marks: List.of(marks),
+    technique: technique,
+    note: note,
+  ));
 
   void undo() {
     if (_history.isEmpty) return;
     final last = _history.removeLast();
     _board = last.board;
+    marks = last.marks;
+    wrong.clear();
     _dropHint();
     _stuck = false;
     _clearMessage();
@@ -241,7 +298,9 @@ class SolveController extends ChangeNotifier {
 
   void restart() {
     _board = _start.copy();
+    marks = List.filled(81, 0);
     _history.clear();
+    wrong.clear();
     _dropHint();
     _stuck = false;
     selected = null;
@@ -257,8 +316,14 @@ class SolveController extends ChangeNotifier {
     'board': _encode(_board),
     'history': [
       for (final move in _history)
-        {'board': _encode(move.board), 'technique': move.technique?.name},
+        {
+          'board': _encode(move.board),
+          'marks': move.marks,
+          'note': move.note,
+          'technique': move.technique?.name,
+        },
     ],
+    'marks': marks,
     'mistakes': mistakes,
     'hintsUsed': hintsUsed,
     'movesShown': movesShown,
@@ -273,23 +338,37 @@ class SolveController extends ChangeNotifier {
     final controller = SolveController(puzzleText);
     final board = controller._decode(json['board']);
     final history = [
-      for (final move in json['history']! as List<Object?>)
-        (
-          board: controller._decode((move! as Map<String, Object?>)['board']),
-          technique: switch ((move as Map<String, Object?>)['technique']) {
-            null => null,
-            final String name => Technique.values.byName(name),
-            _ => throw const FormatException('Bad technique'),
-          },
-        ),
+      for (final entry in json['history']! as List<Object?>)
+        if (entry! as Map<String, Object?> case final move)
+          (
+            board: controller._decode(move['board']),
+            marks: _decodeMarks(move['marks']),
+            note: move['note'] == true,
+            technique: switch (move['technique']) {
+              null => null,
+              final String name => Technique.values.byName(name),
+              _ => throw const FormatException('Bad technique'),
+            },
+          ),
     ];
     controller
       .._board = board
+      ..marks = _decodeMarks(json['marks'])
       .._history.addAll(history)
       ..mistakes = json['mistakes']! as int
       ..hintsUsed = json['hintsUsed']! as int
       ..movesShown = json['movesShown']! as int;
     return controller;
+  }
+
+  /// Notes saved before notes existed are empty.
+  static List<int> _decodeMarks(Object? data) {
+    if (data == null) return List.filled(81, 0);
+    final list = (data as List<Object?>).cast<int>();
+    if (list.length != 81 || list.any((m) => m < 0 || m > allDigitsMask)) {
+      throw const FormatException('Bad notes');
+    }
+    return List.of(list);
   }
 
   static Map<String, Object?> _encode(Board board) => {
