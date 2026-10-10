@@ -120,19 +120,29 @@ void main() {
       expect(c.marks[cell], 0);
     });
 
-    test('fill notes copies the candidates into empty cells', () {
-      c.fillNotes();
+    test('auto notes fill in every empty cell, then clear again', () {
+      expect(c.notesFilled, isFalse);
+      c.toggleAutoNotes();
+      expect(c.notesFilled, isTrue);
       for (var i = 0; i < 81; i++) {
         expect(c.marks[i], c.board.values[i] == 0 ? c.board.candidates[i] : 0);
       }
-      c.fillNotes();
-      expect(c.message, 'Notes are already filled in.');
-      c.undo();
+      c.toggleAutoNotes();
+      expect(c.notesFilled, isFalse);
       expect(c.marks.every((m) => m == 0), isTrue);
+      c.undo();
+      expect(c.notesFilled, isTrue);
+    });
+
+    test('auto notes complete a partly filled set instead of clearing it', () {
+      c.setMode(EntryMode.notes);
+      c.enter(right);
+      c.toggleAutoNotes();
+      expect(c.notesFilled, isTrue);
     });
 
     test('placing a digit clears it from the notes around it', () {
-      c.fillNotes();
+      c.toggleAutoNotes();
       final peer = Board.peers[cell].firstWhere(
         (p) => hasDigit(c.marks[p], right),
       );

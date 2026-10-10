@@ -210,19 +210,21 @@ class SolveController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Fills every empty cell's notes with what the board allows there.
-  void fillNotes() {
-    final next = [
-      for (var c = 0; c < 81; c++)
-        _board.values[c] == 0 ? _board.candidates[c] : 0,
-    ];
-    if (listEquals(next, marks)) {
-      _say('Notes are already filled in.');
-    } else {
-      _push(null, note: true);
-      marks = next;
-      _clearMessage();
-    }
+  /// The notes every empty cell would have if filled in automatically.
+  List<int> get _allNotes => [
+    for (var c = 0; c < 81; c++)
+      _board.values[c] == 0 ? _board.candidates[c] : 0,
+  ];
+
+  /// True when the notes show everything the board allows.
+  bool get notesFilled => listEquals(marks, _allNotes);
+
+  /// Toggles the notes: fills them all in, or clears them when they are
+  /// already filled in. Either can be undone.
+  void toggleAutoNotes() {
+    _push(null, note: true);
+    marks = notesFilled ? List.filled(81, 0) : _allNotes;
+    _clearMessage();
     notifyListeners();
   }
 
