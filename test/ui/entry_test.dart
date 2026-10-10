@@ -201,7 +201,7 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.tap(find.widgetWithText(FilledButton, '$right'));
+      await tester.tap(find.byKey(Key('digit-$right')));
       await tester.pump();
       expect(find.text('1 move so far'), findsOneWidget);
     });
@@ -210,10 +210,13 @@ void main() {
       bigScreen(tester);
       await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
       await tapCell(tester, cell);
-      await tester.tap(find.widgetWithText(FilledButton, '$wrongButLegal'));
+      await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
       await tester.pump();
       expect(find.textContaining('Not $wrongButLegal.'), findsOneWidget);
-      expect(find.textContaining('Mistakes: 1'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
+        '1',
+      );
     });
 
     testWidgets('keyboard digits and arrows work', (tester) async {

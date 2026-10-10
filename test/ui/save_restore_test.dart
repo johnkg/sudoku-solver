@@ -141,7 +141,7 @@ void main() {
 
     Future<void> playMove(WidgetTester tester, int cell, int digit) async {
       await tapCell(tester, cell);
-      await tester.tap(find.widgetWithText(FilledButton, '$digit'));
+      await tester.tap(find.byKey(Key('digit-$digit')));
       await tester.pump();
     }
 

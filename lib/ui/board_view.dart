@@ -128,12 +128,25 @@ class _BoardPainter extends CustomPainter {
     );
 
     final selectedValue = selected == null ? 0 : board.values[selected!];
+    final peers = selected == null
+        ? const <int>{}
+        : {...Board.peers[selected!]};
+    final peerTint = Color.alphaBlend(
+      scheme.primary.withValues(alpha: 0.10),
+      scheme.surfaceContainerLowest,
+    );
+    final selectedTint = Color.alphaBlend(
+      scheme.primary.withValues(alpha: 0.28),
+      scheme.surfaceContainerLowest,
+    );
 
     for (var c = 0; c < 81; c++) {
       Color? fill;
+      if (peers.contains(c)) fill = peerTint;
       if (selectedValue != 0 && board.values[c] == selectedValue) {
         fill = scheme.secondaryContainer;
       }
+      if (c == selected) fill = selectedTint;
       if (placed.containsKey(c)) {
         fill = scheme.tertiaryContainer;
       } else if (removed.containsKey(c)) {
@@ -145,17 +158,6 @@ class _BoardPainter extends CustomPainter {
     }
 
     _drawGrid(canvas, size, cell);
-
-    final pick = selected;
-    if (pick != null) {
-      canvas.drawRect(
-        rectOf(pick).deflate(1.5),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3
-          ..color = scheme.primary,
-      );
-    }
 
     for (var c = 0; c < 81; c++) {
       final rect = rectOf(c);
@@ -219,7 +221,7 @@ class _BoardPainter extends CustomPainter {
       ..color = scheme.outlineVariant
       ..strokeWidth = 1;
     final thick = Paint()
-      ..color = scheme.outline
+      ..color = scheme.onSurface.withValues(alpha: 0.75)
       ..strokeWidth = 2.5;
     for (var i = 0; i <= 9; i++) {
       final paint = i % 3 == 0 ? thick : thin;
