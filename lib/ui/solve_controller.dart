@@ -3,8 +3,9 @@ import 'package:flutter/foundation.dart';
 import '../engine/engine.dart';
 import 'hint_ladder.dart';
 
-/// What a digit button does to the selected cell.
-enum EntryMode { place, remove }
+/// What a digit button does to the selected cell: place the digit, or toggle
+/// it as a note (pencil mark).
+enum EntryMode { place, notes }
 
 /// State of one puzzle session: the board, the player's moves, hints from the
 /// solver, and history for undo.
@@ -42,6 +43,12 @@ class SolveController extends ChangeNotifier {
   bool showCandidates = true;
 
   int? selected;
+
+  /// Wrong digits the player typed, by cell. They are shown in red and kept
+  /// off the board, so the solver and hints keep working. Placing the right
+  /// digit, erasing, undo and restart clear them.
+  final Map<int, int> wrong = {};
+
   EntryMode mode = EntryMode.place;
   int mistakes = 0;
   int hintsUsed = 0;
@@ -169,7 +176,18 @@ class SolveController extends ChangeNotifier {
     } else if (mode == EntryMode.place) {
       _place(cell, digit);
     } else {
-      _remove(cell, digit);
+      _toggleNote(cell, digit);
+    }
+    notifyListeners();
+  }
+
+  /// Clears a wrong digit from the selected cell.
+  void erase() {
+    final cell = selected;
+    if (cell != null && wrong.remove(cell) != null) {
+      _clearMessage();
+    } else {
+      _say('Nothing to erase.');
     }
     notifyListeners();
   }
@@ -177,11 +195,13 @@ class SolveController extends ChangeNotifier {
   void _place(int cell, int digit) {
     if (!hasDigit(_board.candidates[cell], digit)) {
       mistakes++;
+      wrong[cell] = digit;
       _say(_whyNotCandidate(cell, digit), error: true);
       return;
     }
     if (solution.values[cell] != digit) {
       mistakes++;
+      wrong[cell] = digit;
       _say(
         'Not $digit. It breaks no rule yet, but the puzzle cannot be '
         'finished with $digit in ${Board.cellName(cell)}.',
@@ -191,14 +211,27 @@ class SolveController extends ChangeNotifier {
     }
     _push(null);
     _board.place(cell, digit);
+    wrong.remove(cell);
     _dropHint();
     _stuck = false;
     _clearMessage();
   }
 
-  void _remove(int cell, int digit) {
+  /// Notes mode: a note that is there is ruled out, one that is not comes
+  /// back, as long as no peer already holds that digit.
+  void _toggleNote(int cell, int digit) {
     if (!hasDigit(_board.candidates[cell], digit)) {
-      _say('$digit is not a candidate in ${Board.cellName(cell)}.');
+      for (final peer in Board.peers[cell]) {
+        if (_board.values[peer] == digit) {
+          _say(_whyNotCandidate(cell, digit));
+          return;
+        }
+      }
+      _push(null);
+      _board.candidates[cell] |= digitBit(digit);
+      _dropHint();
+      _stuck = false;
+      _clearMessage();
       return;
     }
     if (solution.values[cell] == digit) {
@@ -233,6 +266,7 @@ class SolveController extends ChangeNotifier {
     if (_history.isEmpty) return;
     final last = _history.removeLast();
     _board = last.board;
+    wrong.clear();
     _dropHint();
     _stuck = false;
     _clearMessage();
@@ -242,6 +276,7 @@ class SolveController extends ChangeNotifier {
   void restart() {
     _board = _start.copy();
     _history.clear();
+    wrong.clear();
     _dropHint();
     _stuck = false;
     selected = null;

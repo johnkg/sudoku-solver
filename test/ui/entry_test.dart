@@ -44,6 +44,19 @@ void main() {
       expect(c.moveCount, 0);
     });
 
+    test('a wrong digit is shown in the cell until erased', () {
+      c.enter(wrongButLegal);
+      expect(c.wrong[cell], wrongButLegal);
+      expect(c.board.values[cell], 0);
+      c.erase();
+      expect(c.wrong, isEmpty);
+      c.enter(wrongButLegal);
+      c.enter(right);
+      expect(c.wrong, isEmpty);
+      expect(c.board.values[cell], right);
+      expect(c.mistakes, 2);
+    });
+
     test('a digit already in the row, column or box says where', () {
       final used = [
         for (final p in Board.peers[cell])
@@ -75,8 +88,8 @@ void main() {
     });
   });
 
-  group('removing candidates', () {
-    setUp(() => c.setMode(EntryMode.remove));
+  group('editing notes', () {
+    setUp(() => c.setMode(EntryMode.notes));
 
     test('a wrong candidate can be removed', () {
       c.enter(wrongButLegal);
@@ -92,10 +105,22 @@ void main() {
       expect(c.message, startsWith('Not safe'));
     });
 
-    test('removing something that is not there is only a note', () {
+    test('a removed note can be added back', () {
       c.enter(wrongButLegal);
       c.enter(wrongButLegal);
-      expect(c.message, contains('is not a candidate'));
+      expect(hasDigit(c.board.candidates[cell], wrongButLegal), isTrue);
+      expect(c.mistakes, 0);
+      expect(c.moveCount, 2);
+    });
+
+    test('a note a peer already rules out cannot be added', () {
+      final used = [
+        for (final p in Board.peers[cell])
+          if (c.board.values[p] != 0) c.board.values[p],
+      ].first;
+      c.enter(used);
+      expect(c.message, startsWith('There is already a $used in'));
+      expect(hasDigit(c.board.candidates[cell], used), isFalse);
       expect(c.mistakes, 0);
     });
 

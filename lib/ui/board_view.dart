@@ -12,6 +12,7 @@ class BoardView extends StatelessWidget {
     this.step,
     this.candidateFocus,
     this.selected,
+    this.wrong = const {},
     this.onCellTap,
   });
 
@@ -26,6 +27,9 @@ class BoardView extends StatelessWidget {
 
   /// The cell the player has selected, if any.
   final int? selected;
+
+  /// Wrong digits the player typed, drawn in red.
+  final Map<int, int> wrong;
 
   /// Called with a cell index when the player taps the board.
   final ValueChanged<int>? onCellTap;
@@ -59,6 +63,7 @@ class BoardView extends StatelessWidget {
                 step: step,
                 candidateFocus: candidateFocus,
                 selected: selected,
+                wrong: wrong,
                 scheme: Theme.of(context).colorScheme,
               ),
             ),
@@ -77,6 +82,7 @@ class _BoardPainter extends CustomPainter {
     required this.step,
     required this.candidateFocus,
     required this.selected,
+    required this.wrong,
     required this.scheme,
   });
 
@@ -86,6 +92,7 @@ class _BoardPainter extends CustomPainter {
   final Step? step;
   final Step? candidateFocus;
   final int? selected;
+  final Map<int, int> wrong;
   final ColorScheme scheme;
 
   @override
@@ -170,6 +177,17 @@ class _BoardPainter extends CustomPainter {
           fontSize: cell * 0.62,
           color: givens.contains(c) ? scheme.onSurface : scheme.primary,
           weight: givens.contains(c) ? FontWeight.w700 : FontWeight.w500,
+        );
+        continue;
+      }
+      if (wrong.containsKey(c)) {
+        _text(
+          canvas,
+          '${wrong[c]}',
+          rect.center,
+          fontSize: cell * 0.62,
+          color: scheme.error,
+          weight: FontWeight.w500,
         );
         continue;
       }
