@@ -58,7 +58,7 @@ void main() {
     await tester.scrollUntilVisible(find.text('X-Wing practice'), 200);
     await tester.tap(find.text('X-Wing practice'));
     await tester.pumpAndSettle();
-    expect(find.text('Get a hint'), findsOneWidget);
+    expect(find.byTooltip('Get a hint'), findsOneWidget);
   });
 
   testWidgets('every lesson offers at least one practice puzzle', (

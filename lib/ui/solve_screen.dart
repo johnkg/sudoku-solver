@@ -157,24 +157,9 @@ class _SolveScreenState extends State<SolveScreen> {
       listenable: controller,
       builder: (context, _) => Scaffold(
         appBar: AppBar(
+          centerTitle: true,
           title: Text(widget.puzzle.title),
           actions: [
-            IconButton(
-              tooltip: controller.showCandidates
-                  ? 'Hide pencil marks'
-                  : 'Show pencil marks',
-              icon: Icon(
-                controller.showCandidates
-                    ? Icons.grid_view
-                    : Icons.grid_view_outlined,
-              ),
-              onPressed: controller.toggleCandidates,
-            ),
-            IconButton(
-              tooltip: 'Undo',
-              icon: const Icon(Icons.undo),
-              onPressed: controller.canUndo ? controller.undo : null,
-            ),
             IconButton(
               tooltip: 'Start over',
               icon: const Icon(Icons.restart_alt),
@@ -190,6 +175,11 @@ class _SolveScreenState extends State<SolveScreen> {
           child: SafeArea(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                final stats = _StatsRow(
+                  level: widget.puzzle.level,
+                  mistakes: controller.mistakes,
+                  hints: controller.hintsUsed,
+                );
                 final board = BoardView(
                   board: controller.board,
                   givens: controller.givens,
@@ -198,7 +188,9 @@ class _SolveScreenState extends State<SolveScreen> {
                   selected: controller.selected,
                   onCellTap: controller.select,
                 );
-                final entry = _EntryPad(controller: controller);
+                final status = _StatusLine(controller: controller);
+                final tools = _ToolBar(controller: controller);
+                final pad = _NumberPad(controller: controller);
                 final panel = _StepPanel(
                   controller: controller,
                   focus: widget.puzzle.technique,
@@ -221,8 +213,13 @@ class _SolveScreenState extends State<SolveScreen> {
                           flex: 2,
                           child: SingleChildScrollView(
                             child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
-                                entry,
+                                stats,
+                                const SizedBox(height: 8),
+                                status,
+                                tools,
+                                pad,
                                 const SizedBox(height: 16),
                                 panel,
                               ],
@@ -233,14 +230,27 @@ class _SolveScreenState extends State<SolveScreen> {
                     ),
                   );
                 }
-                return ListView(
-                  padding: const EdgeInsets.all(16),
+                // Phone layout: the board and the hint panel scroll, the
+                // tools and digits stay within thumb reach at the bottom.
+                return Column(
                   children: [
-                    board,
-                    const SizedBox(height: 16),
-                    entry,
-                    const SizedBox(height: 16),
-                    panel,
+                    Expanded(
+                      child: ListView(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        children: [
+                          stats,
+                          board,
+                          status,
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            child: panel,
+                          ),
+                        ],
+                      ),
+                    ),
+                    tools,
+                    pad,
+                    const SizedBox(height: 8),
                   ],
                 );
               },
@@ -252,9 +262,59 @@ class _SolveScreenState extends State<SolveScreen> {
   }
 }
 
-/// Mode switch, digit buttons, and feedback for the player's own moves.
-class _EntryPad extends StatelessWidget {
-  const _EntryPad({required this.controller});
+/// Level, mistakes and hints at a glance above the board.
+class _StatsRow extends StatelessWidget {
+  const _StatsRow({
+    required this.level,
+    required this.mistakes,
+    required this.hints,
+  });
+
+  final int level;
+  final int mistakes;
+  final int hints;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget stat(String label, String value, {Key? valueKey}) => Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          key: valueKey,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          stat('Level', '$level · ${levelNames[level] ?? ''}'),
+          stat('Mistakes', '$mistakes', valueKey: const Key('mistakes-value')),
+          stat('Hints', '$hints', valueKey: const Key('hints-value')),
+        ],
+      ),
+    );
+  }
+}
+
+/// One line of feedback for the player's last move.
+class _StatusLine extends StatelessWidget {
+  const _StatusLine({required this.controller});
 
   final SolveController controller;
 
@@ -263,71 +323,221 @@ class _EntryPad extends StatelessWidget {
     final theme = Theme.of(context);
     if (controller.solved) return const SizedBox.shrink();
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SegmentedButton<EntryMode>(
-              showSelectedIcon: false,
-              segments: const [
-                ButtonSegment(
-                  value: EntryMode.place,
-                  label: Text('Place digit'),
-                ),
-                ButtonSegment(
-                  value: EntryMode.remove,
-                  label: Text('Remove candidate'),
-                ),
-              ],
-              selected: {controller.mode},
-              onSelectionChanged: (s) => controller.setMode(s.first),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (var digit = 1; digit <= 9; digit++)
-                  SizedBox(
-                    width: 48,
-                    height: 48,
-                    child: FilledButton.tonal(
-                      style: FilledButton.styleFrom(padding: EdgeInsets.zero),
-                      onPressed: () => controller.enter(digit),
-                      child: Text('$digit', style: theme.textTheme.titleLarge),
-                    ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              controller.message ??
-                  (controller.selected == null
-                      ? 'Tap a cell, then pick a digit.'
-                      : controller.board.values[controller.selected!] != 0
-                      ? 'Tap an empty cell to continue.'
-                      : controller.mode == EntryMode.place
-                      ? 'Pick the digit that goes in '
-                            '${Board.cellName(controller.selected!)}.'
-                      : 'Pick a candidate to rule out in '
-                            '${Board.cellName(controller.selected!)}.'),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: controller.messageIsError
-                    ? theme.colorScheme.error
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Mistakes: ${controller.mistakes} · Hints: ${controller.hintsUsed}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
+    final text =
+        controller.message ??
+        (controller.selected == null
+            ? 'Tap a cell, then pick a digit.'
+            : controller.board.values[controller.selected!] != 0
+            ? 'Tap an empty cell to continue.'
+            : controller.mode == EntryMode.place
+            ? 'Pick the digit that goes in '
+                  '${Board.cellName(controller.selected!)}.'
+            : 'Pick a candidate to rule out in '
+                  '${Board.cellName(controller.selected!)}.');
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      child: Text(
+        text,
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: controller.messageIsError
+              ? theme.colorScheme.error
+              : theme.colorScheme.onSurfaceVariant,
         ),
+      ),
+    );
+  }
+}
+
+/// Undo, pencil marks, candidate removal and hint, as big icon buttons.
+class _ToolBar extends StatelessWidget {
+  const _ToolBar({required this.controller});
+
+  final SolveController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller.solved) return const SizedBox.shrink();
+    final removing = controller.mode == EntryMode.remove;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: _ToolButton(
+              tooltip: 'Undo',
+              label: 'Undo',
+              icon: Icons.undo,
+              onPressed: controller.canUndo ? controller.undo : null,
+            ),
+          ),
+          Expanded(
+            child: _ToolButton(
+              tooltip: controller.showCandidates
+                  ? 'Hide pencil marks'
+                  : 'Show pencil marks',
+              label: 'Notes',
+              icon: Icons.edit_outlined,
+              badge: controller.showCandidates ? 'ON' : 'OFF',
+              onPressed: controller.toggleCandidates,
+            ),
+          ),
+          Expanded(
+            child: _ToolButton(
+              tooltip: removing
+                  ? 'Switch to placing digits'
+                  : 'Switch to removing candidates',
+              label: 'Remove',
+              icon: Icons.block,
+              badge: removing ? 'ON' : 'OFF',
+              onPressed: () => controller.setMode(
+                removing ? EntryMode.place : EntryMode.remove,
+              ),
+            ),
+          ),
+          Expanded(
+            child: _ToolButton(
+              tooltip: 'Get a hint',
+              label: 'Hint',
+              icon: Icons.lightbulb_outline,
+              onPressed: controller.findNextStep,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ToolButton extends StatelessWidget {
+  const _ToolButton({
+    required this.tooltip,
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+    this.badge,
+  });
+
+  final String tooltip;
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  /// A small ON / OFF pill on the icon, for tools that stay switched.
+  final String? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final enabled = onPressed != null;
+    final color = enabled
+        ? scheme.onSurfaceVariant
+        : scheme.onSurface.withValues(alpha: 0.38);
+
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, size: 28, color: color),
+                  if (badge != null)
+                    Positioned(
+                      left: 16,
+                      top: -8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 5,
+                          vertical: 1,
+                        ),
+                        decoration: BoxDecoration(
+                          color: badge == 'ON'
+                              ? scheme.primary
+                              : scheme.outlineVariant,
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          badge!,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            color: badge == 'ON'
+                                ? scheme.onPrimary
+                                : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(color: color),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A single row of big digits. A digit that is already placed nine times is
+/// dimmed.
+class _NumberPad extends StatelessWidget {
+  const _NumberPad({required this.controller});
+
+  final SolveController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    if (controller.solved) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final values = controller.board.values;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Row(
+        children: [
+          for (var digit = 1; digit <= 9; digit++)
+            Expanded(
+              child: Builder(
+                builder: (context) {
+                  final done = values.where((v) => v == digit).length >= 9;
+                  return InkWell(
+                    key: Key('digit-$digit'),
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: done ? null : () => controller.enter(digit),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      child: Text(
+                        '$digit',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.w400,
+                          color: done
+                              ? scheme.onSurface.withValues(alpha: 0.2)
+                              : scheme.primary,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -401,15 +611,9 @@ class _StepPanel extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Stuck? Ask for a hint: first where to look, then the technique, '
+            'Stuck? Tap Hint: first where to look, then the technique, '
             'then the move. Hardest technique here: ${focus.label}.',
             style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: controller.findNextStep,
-            icon: const Icon(Icons.lightbulb_outline),
-            label: const Text('Get a hint'),
           ),
         ],
       );

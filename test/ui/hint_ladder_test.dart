@@ -172,7 +172,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
-    await tester.tap(find.text('Get a hint'));
+    await tester.tap(find.byTooltip('Get a hint'));
     await tester.pumpAndSettle();
     expect(find.text('Hint 1 of 3'), findsOneWidget);
     expect(find.textContaining('Look at'), findsOneWidget);
@@ -186,6 +186,6 @@ void main() {
 
     await tester.tap(find.text('Hide'));
     await tester.pumpAndSettle();
-    expect(find.text('Get a hint'), findsOneWidget);
+    expect(find.byTooltip('Get a hint'), findsOneWidget);
   });
 }

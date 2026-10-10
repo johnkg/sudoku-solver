@@ -125,7 +125,7 @@ void main() {
             ),
       );
       await tester.pump();
-      await tester.tap(find.widgetWithText(FilledButton, '$digit'));
+      await tester.tap(find.byKey(Key('digit-$digit')));
       await tester.pump();
     }
 
