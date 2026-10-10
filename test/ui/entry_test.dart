@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +6,7 @@ import '../support.dart';
 
 import 'package:sudoku_solver/engine/engine.dart';
 import 'package:sudoku_solver/ui/board_view.dart';
+import 'package:sudoku_solver/ui/puzzle_library.dart';
 import 'package:sudoku_solver/ui/solve_controller.dart';
 import 'package:sudoku_solver/ui/solve_screen.dart';
 
@@ -139,6 +140,28 @@ void main() {
       c.enter(right);
       c.toggleAutoNotes();
       expect(c.notesFilled, isTrue);
+    });
+
+    test('applying a hint removes its eliminations from the notes', () {
+      final pointing = puzzleLibrary.firstWhere(
+        (p) => p.technique == Technique.pointingPair,
+      );
+      c = SolveController(pointing.text);
+      c.toggleAutoNotes();
+      Step? step;
+      while (true) {
+        c.findNextStep();
+        step = c.pending;
+        if (step == null || step.eliminations.isNotEmpty) break;
+        c.applyPending();
+      }
+      expect(step, isNotNull);
+      c.applyPending();
+      for (final e in step!.eliminations) {
+        for (final d in e.digits) {
+          expect(hasDigit(c.marks[e.cell], d), isFalse);
+        }
+      }
     });
 
     test('placing a digit clears it from the notes around it', () {

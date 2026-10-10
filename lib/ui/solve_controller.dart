@@ -142,6 +142,11 @@ class SolveController extends ChangeNotifier {
     for (final p in step.placements) {
       _clearMarksAround(p.cell, p.digit);
     }
+    for (final e in step.eliminations) {
+      for (final d in e.digits) {
+        marks[e.cell] &= ~digitBit(d);
+      }
+    }
     _dropHint();
     notifyListeners();
   }
