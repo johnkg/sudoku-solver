@@ -177,6 +177,29 @@ void main() {
     });
   });
 
+  group('clock', () {
+    test('ticks, pauses, restarts and is saved', () {
+      c.tick();
+      c.tick();
+      expect(c.seconds.value, 2);
+      c.togglePause();
+      c.tick();
+      expect(c.seconds.value, 2);
+      c.togglePause();
+
+      final again = SolveController.restore(warmUp.text, c.toJson());
+      expect(again.seconds.value, 2);
+
+      c.restart();
+      expect(c.seconds.value, 0);
+    });
+
+    test('games saved before the clock existed start at zero', () {
+      final json = c.toJson()..remove('seconds');
+      expect(SolveController.restore(warmUp.text, json).seconds.value, 0);
+    });
+  });
+
   group('history and hints', () {
     test('undo reverses a player move but keeps the mistake count', () {
       c.enter(wrongButLegal);
@@ -285,8 +308,69 @@ void main() {
       expect(find.textContaining('Not $wrongButLegal.'), findsOneWidget);
       expect(
         tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
-        '1',
+        '1/3',
       );
+    });
+
+    testWidgets('three mistakes offer to start over', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      await tapCell(tester, cell);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsOneWidget);
+
+      await tester.tap(find.text('Keep playing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsNothing);
+      await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsNothing);
+    });
+
+    testWidgets('start over from the limit dialog resets the game', (
+      tester,
+    ) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      await tapCell(tester, cell);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start over'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
+        '0/3',
+      );
+    });
+
+    testWidgets('the clock runs, and stops while paused', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      String time() =>
+          tester.widget<Text>(find.byKey(const Key('time-value'))).data!;
+      expect(time(), '0:00');
+      await tester.pump(const Duration(seconds: 3));
+      expect(time(), '0:03');
+
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pump();
+      expect(find.byType(BoardView), findsNothing);
+      expect(find.text('Paused'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      expect(time(), '0:03');
+
+      await tester.tap(find.text('Paused'));
+      await tester.pump();
+      expect(find.byType(BoardView), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(time(), '0:05');
     });
 
     testWidgets('keyboard digits and arrows work', (tester) async {

@@ -58,6 +58,15 @@ class SolveController extends ChangeNotifier {
 
   EntryMode mode = EntryMode.place;
   int mistakes = 0;
+
+  /// Mistakes the player may make before the game offers to start over.
+  static const maxMistakes = 3;
+
+  /// Seconds spent on this puzzle. Only changes through [tick].
+  final ValueNotifier<int> seconds = ValueNotifier(0);
+
+  /// True while the board is hidden and the clock stopped.
+  bool paused = false;
   int hintsUsed = 0;
 
   /// Hints that went all the way to showing the move.
@@ -306,6 +315,8 @@ class SolveController extends ChangeNotifier {
   void restart() {
     _board = _start.copy();
     marks = List.filled(81, 0);
+    seconds.value = 0;
+    paused = false;
     _history.clear();
     wrong.clear();
     _dropHint();
@@ -331,6 +342,7 @@ class SolveController extends ChangeNotifier {
         },
     ],
     'marks': marks,
+    'seconds': seconds.value,
     'mistakes': mistakes,
     'hintsUsed': hintsUsed,
     'movesShown': movesShown,
@@ -362,6 +374,7 @@ class SolveController extends ChangeNotifier {
       .._board = board
       ..marks = _decodeMarks(json['marks'])
       .._history.addAll(history)
+      ..seconds.value = json['seconds'] as int? ?? 0
       ..mistakes = json['mistakes']! as int
       ..hintsUsed = json['hintsUsed']! as int
       ..movesShown = json['movesShown']! as int;
@@ -403,6 +416,23 @@ class SolveController extends ChangeNotifier {
       }
     }
     return board;
+  }
+
+  /// Adds a second to the clock, unless paused or solved.
+  void tick() {
+    if (!paused && !solved) seconds.value++;
+  }
+
+  void togglePause() {
+    if (solved) return;
+    paused = !paused;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    seconds.dispose();
+    super.dispose();
   }
 
   void toggleCandidates() {

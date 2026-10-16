@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' hide Step;
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/services.dart';
 
 import '../engine/engine.dart';
@@ -40,7 +43,7 @@ class SolveScreen extends StatefulWidget {
   State<SolveScreen> createState() => _SolveScreenState();
 }
 
-class _SolveScreenState extends State<SolveScreen> {
+class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
   late final ProgressStore store = ProgressScope.read(context);
   late final SolveController controller = _create();
 
@@ -50,6 +53,13 @@ class _SolveScreenState extends State<SolveScreen> {
 
   /// A level this solve just opened, to tell the player.
   int? _newlyUnlockedLevel;
+
+  Timer? _clock;
+  bool _inBackground = false;
+
+  /// Whether the mistake limit has already been dealt with, so the dialog
+  /// shows once per run of mistakes.
+  late bool _limitHandled = controller.mistakes >= SolveController.maxMistakes;
 
   SolveController _create() {
     final text = widget.puzzle.text;
@@ -74,10 +84,21 @@ class _SolveScreenState extends State<SolveScreen> {
     super.initState();
     _savedSignature = _signature();
     controller.addListener(_onChange);
+    WidgetsBinding.instance.addObserver(this);
+    _clock = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!_inBackground) controller.tick();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    _inBackground = state != AppLifecycleState.resumed;
   }
 
   @override
   void dispose() {
+    _clock?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     controller.removeListener(_onChange);
     controller.dispose();
     super.dispose();
@@ -89,6 +110,7 @@ class _SolveScreenState extends State<SolveScreen> {
 
   /// Saves the game when it changed, and records the solve when it is done.
   void _onChange() {
+    _checkMistakeLimit();
     if (!widget.recordProgress) return;
     if (controller.solved) {
       if (_recorded) return;
@@ -131,6 +153,42 @@ class _SolveScreenState extends State<SolveScreen> {
     }
   }
 
+  void _checkMistakeLimit() {
+    if (controller.mistakes < SolveController.maxMistakes) {
+      _limitHandled = false;
+    } else if (!_limitHandled && !controller.solved) {
+      _limitHandled = true;
+      // Showing a dialog during a notification would rebuild mid-build.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _showGameOver();
+      });
+    }
+  }
+
+  Future<void> _showGameOver() async {
+    final startOver = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Out of mistakes'),
+        content: Text(
+          'You have made ${SolveController.maxMistakes} mistakes. Start this '
+          'puzzle over, or keep going with the mistakes counted.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Keep playing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Start over'),
+          ),
+        ],
+      ),
+    );
+    if (startOver ?? false) controller.restart();
+  }
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
@@ -160,6 +218,16 @@ class _SolveScreenState extends State<SolveScreen> {
           centerTitle: true,
           title: Text(widget.puzzle.title),
           actions: [
+            if (!controller.solved)
+              IconButton(
+                tooltip: controller.paused ? 'Resume' : 'Pause',
+                icon: Icon(
+                  controller.paused
+                      ? Icons.play_circle_outline
+                      : Icons.pause_circle_outline,
+                ),
+                onPressed: controller.togglePause,
+              ),
             IconButton(
               tooltip: controller.showCandidates
                   ? 'Hide pencil marks'
@@ -190,8 +258,9 @@ class _SolveScreenState extends State<SolveScreen> {
                   level: widget.puzzle.level,
                   mistakes: controller.mistakes,
                   hints: controller.hintsUsed,
+                  seconds: controller.seconds,
                 );
-                final board = BoardView(
+                final liveBoard = BoardView(
                   board: controller.board,
                   givens: controller.givens,
                   showCandidates: controller.showCandidates,
@@ -201,9 +270,18 @@ class _SolveScreenState extends State<SolveScreen> {
                   marks: controller.marks,
                   onCellTap: controller.select,
                 );
+                final board = controller.paused
+                    ? _PausedBoard(onResume: controller.togglePause)
+                    : liveBoard;
                 final status = _StatusLine(controller: controller);
-                final tools = _ToolBar(controller: controller);
-                final pad = _NumberPad(controller: controller);
+                final tools = _Disabled(
+                  disabled: controller.paused,
+                  child: _ToolBar(controller: controller),
+                );
+                final pad = _Disabled(
+                  disabled: controller.paused,
+                  child: _NumberPad(controller: controller),
+                );
                 final panel = _StepPanel(
                   controller: controller,
                   focus: widget.puzzle.technique,
@@ -275,50 +353,125 @@ class _SolveScreenState extends State<SolveScreen> {
   }
 }
 
-/// Level, mistakes and hints at a glance above the board.
+/// Seconds as `m:ss`, or `h:mm:ss` past an hour.
+String formatClock(int seconds) {
+  final h = seconds ~/ 3600;
+  final m = (seconds % 3600) ~/ 60;
+  final s = (seconds % 60).toString().padLeft(2, '0');
+  return h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$s' : '$m:$s';
+}
+
+/// Stands in for the board while paused, so the puzzle cannot be studied with
+/// the clock stopped.
+class _PausedBoard extends StatelessWidget {
+  const _PausedBoard({required this.onResume});
+
+  final VoidCallback onResume;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AspectRatio(
+      aspectRatio: 1,
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHigh,
+        child: InkWell(
+          onTap: onResume,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.play_circle_outline,
+                size: 64,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(height: 8),
+              Text('Paused', style: theme.textTheme.titleLarge),
+              Text('Tap to resume', style: theme.textTheme.bodyMedium),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Greys out and blocks [child] while [disabled].
+class _Disabled extends StatelessWidget {
+  const _Disabled({required this.disabled, required this.child});
+
+  final bool disabled;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => IgnorePointer(
+    ignoring: disabled,
+    child: Opacity(opacity: disabled ? 0.4 : 1, child: child),
+  );
+}
+
+/// Level, mistakes, hints and time at a glance above the board.
 class _StatsRow extends StatelessWidget {
   const _StatsRow({
     required this.level,
     required this.mistakes,
     required this.hints,
+    required this.seconds,
   });
 
   final int level;
   final int mistakes;
   final int hints;
+  final ValueListenable<int> seconds;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    Widget stat(String label, String value, {Key? valueKey}) => Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+    Widget stat(String label, String value, {Key? valueKey}) => Expanded(
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              value,
+              key: valueKey,
+              style: theme.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 2),
-        Text(
-          value,
-          key: valueKey,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+      ),
     );
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          stat('Level', '$level · ${levelNames[level] ?? ''}'),
-          stat('Mistakes', '$mistakes', valueKey: const Key('mistakes-value')),
+          stat('Level $level', levelNames[level] ?? ''),
+          stat(
+            'Mistakes',
+            '$mistakes/${SolveController.maxMistakes}',
+            valueKey: const Key('mistakes-value'),
+          ),
           stat('Hints', '$hints', valueKey: const Key('hints-value')),
+          ValueListenableBuilder<int>(
+            valueListenable: seconds,
+            builder: (context, value, _) => stat(
+              'Time',
+              formatClock(value),
+              valueKey: const Key('time-value'),
+            ),
+          ),
         ],
       ),
     );
@@ -680,6 +833,7 @@ class _Summary extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
+          '${formatClock(controller.seconds.value)} · '
           '${controller.moveCount} moves · ${controller.mistakes} mistakes · '
           '${controller.hintsUsed} hints (${controller.movesShown} showed the '
           'full move)',
