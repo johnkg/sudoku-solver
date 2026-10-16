@@ -1,11 +1,11 @@
 {
-    "name": "sudoku_solver",
-    "short_name": "sudoku_solver",
+    "name": "Sudoku Technique Teacher",
+    "short_name": "Sudoku",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FEF7FF",
+    "theme_color": "#3F51B5",
+    "description": "Learn Sudoku techniques by solving puzzles with step-by-step hints.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [
