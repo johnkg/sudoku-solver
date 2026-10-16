@@ -177,6 +177,64 @@ void main() {
     });
   });
 
+  group('filling several cells', () {
+    test('an armed digit fills each cell tapped, until disarmed', () {
+      final empties = [
+        for (var i = 0; i < 81; i++)
+          if (c.board.values[i] == 0) i,
+      ];
+      // A cell where the armed digit is right, and another cell where it is
+      // not.
+      final digit = right;
+      c.toggleArmed(digit);
+      expect(c.armed, digit);
+      c.tapCell(cell);
+      expect(c.board.values[cell], digit);
+
+      final other = empties.firstWhere(
+        (i) =>
+            i != cell &&
+            c.board.values[i] == 0 &&
+            c.solution.values[i] != digit,
+      );
+      c.tapCell(other);
+      expect(c.mistakes, 1);
+      expect(c.wrong[other], digit);
+
+      c.toggleArmed(digit);
+      expect(c.armed, isNull);
+      c.tapCell(cell);
+      expect(c.message, isNot(startsWith('Not')));
+    });
+
+    test('tapping a filled cell with a digit armed only selects it', () {
+      c.toggleArmed(right);
+      final given = c.givens.first;
+      c.tapCell(given);
+      expect(c.selected, given);
+      expect(c.mistakes, 0);
+    });
+
+    test('restart disarms', () {
+      c.toggleArmed(3);
+      c.restart();
+      expect(c.armed, isNull);
+    });
+  });
+
+  group('completed units', () {
+    test('placing the last digit of a unit reports its cells', () {
+      var guard = 0;
+      while (!c.solved && c.completedSerial == 0 && guard++ < 100) {
+        c.findNextStep();
+        c.applyPending();
+      }
+      expect(c.completedSerial, greaterThan(0));
+      expect(c.completed, isNotEmpty);
+      expect(c.completed.every((i) => c.board.values[i] != 0), isTrue);
+    });
+  });
+
   group('clock', () {
     test('ticks, pauses, restarts and is saved', () {
       c.tick();
@@ -371,6 +429,22 @@ void main() {
       expect(find.byType(BoardView), findsOneWidget);
       await tester.pump(const Duration(seconds: 2));
       expect(time(), '0:05');
+    });
+
+    testWidgets('long-pressing a digit arms it for tapping cells', (
+      tester,
+    ) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      await tester.longPress(find.byKey(Key('digit-$right')));
+      await tester.pump();
+      expect(
+        find.text('Tap cells to fill in $right. Tap $right again to stop.'),
+        findsOneWidget,
+      );
+      await tapCell(tester, cell);
+      await tester.pumpAndSettle();
+      expect(find.text('1 move so far'), findsOneWidget);
     });
 
     testWidgets('keyboard digits and arrows work', (tester) async {
