@@ -34,10 +34,7 @@ class PuzzleRecord {
   /// the two (the fastest solve need not be the cleanest).
   PuzzleRecord bestWith(PuzzleRecord other) {
     final best = other.isBetterThan(this) ? other : this;
-    final times = [
-      if (seconds != null) seconds!,
-      if (other.seconds != null) other.seconds!,
-    ];
+    final times = [?seconds, ?other.seconds];
     return PuzzleRecord(
       mistakes: best.mistakes,
       hints: best.hints,

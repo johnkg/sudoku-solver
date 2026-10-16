@@ -329,7 +329,10 @@ class _SolveScreenState extends State<SolveScreen>
                       : store.dailyStreak,
                 );
 
-                if (constraints.maxWidth >= 840) {
+                // Side by side on wide screens and on phones turned sideways, where a
+                // full-width board would not fit the height.
+                if (constraints.maxWidth >= 840 ||
+                    constraints.maxWidth > constraints.maxHeight * 1.2) {
                   return Padding(
                     padding: const EdgeInsets.all(24),
                     child: Row(
