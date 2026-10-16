@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../progress/progress_scope.dart';
 import 'daily_puzzle.dart';
+import 'level_header.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'random_puzzle.dart';
@@ -48,28 +49,13 @@ class PracticeTab extends StatelessWidget {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.only(top: 24, bottom: 4),
-                        child: Row(
-                          children: [
-                            Text(
-                              'Level $level · ${levelNames[level]}',
-                              style: theme.textTheme.titleMedium,
-                            ),
-                            if (!unlocked) ...[
-                              const SizedBox(width: 8),
-                              const Icon(Icons.lock_outline, size: 18),
-                            ],
-                          ],
-                        ),
+                      LevelHeader(
+                        level: level,
+                        unlocked: unlocked,
+                        blurb: unlocked
+                            ? levelBlurbs[level]!
+                            : unlockHint(level),
                       ),
-                      Text(
-                        unlocked ? levelBlurbs[level]! : unlockHint(level),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       for (final puzzle in puzzleLibrary.where(
                         (p) => p.level == level,
                       ))

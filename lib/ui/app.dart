@@ -18,6 +18,14 @@ class SudokuApp extends StatelessWidget {
         seedColor: const Color(0xFF3F51B5),
         brightness: brightness,
       ),
+      appBarTheme: const AppBarTheme(centerTitle: true),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      ),
     );
 
     return ProgressScope(
