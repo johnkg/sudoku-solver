@@ -295,6 +295,21 @@ void main() {
       expect(tester.widget<Stars>(find.byType(Stars)).count, 2);
     });
 
+    testWidgets('the menu opens the statistics', (tester) async {
+      phone(tester);
+      final store = ProgressStore.memory()
+        ..recordSolve('a', mistakes: 0, hints: 0, seconds: 95);
+      await tester.pumpWidget(SudokuApp(store: store));
+
+      await tester.tap(find.byTooltip('Progress options'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Statistics'));
+      await tester.pumpAndSettle();
+      expect(find.text('Puzzles solved'), findsOneWidget);
+      expect(find.text('Daily streak'), findsOneWidget);
+      expect(find.text('Level 1 · Beginner'), findsOneWidget);
+    });
+
     testWidgets('the menu can unlock everything and reset progress', (
       tester,
     ) async {

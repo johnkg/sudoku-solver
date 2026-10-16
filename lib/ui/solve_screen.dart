@@ -151,6 +151,7 @@ class _SolveScreenState extends State<SolveScreen>
           dailyKey,
           mistakes: controller.mistakes,
           hints: controller.hintsUsed,
+          seconds: controller.seconds.value,
         );
         return;
       }
@@ -160,6 +161,7 @@ class _SolveScreenState extends State<SolveScreen>
         widget.puzzle.id,
         mistakes: controller.mistakes,
         hints: controller.hintsUsed,
+        seconds: controller.seconds.value,
       );
       if (!wasOpen &&
           isLevelUnlocked(store, next) &&
