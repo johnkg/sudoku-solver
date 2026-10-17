@@ -10,9 +10,19 @@ import 'step_text.dart';
 /// Steps through the way the solver would crack [start], one move at a time,
 /// explaining each and linking the technique to its lesson.
 class WalkthroughScreen extends StatefulWidget {
-  const WalkthroughScreen({super.key, required this.start});
+  const WalkthroughScreen({
+    super.key,
+    required this.start,
+    this.givens,
+    this.title = 'How to solve it',
+  });
 
   final Board start;
+
+  /// Cells drawn as givens. Defaults to every filled cell of [start].
+  final Set<int>? givens;
+
+  final String title;
 
   @override
   State<WalkthroughScreen> createState() => _WalkthroughScreenState();
@@ -32,10 +42,12 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
     super.initState();
     const solver = Solver();
     var board = widget.start.copy();
-    givens = {
-      for (var i = 0; i < 81; i++)
-        if (board.values[i] != 0) i,
-    };
+    givens =
+        widget.givens ??
+        {
+          for (var i = 0; i < 81; i++)
+            if (board.values[i] != 0) i,
+        };
     boards.add(board);
     while (!board.isSolved && !board.hasContradiction) {
       final step = solver.nextStep(board);
@@ -85,7 +97,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('How to solve it'),
+        title: Text(widget.title),
         actions: [
           IconButton(
             tooltip: allNotes

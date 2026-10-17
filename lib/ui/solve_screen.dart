@@ -16,6 +16,7 @@ import 'puzzle_library.dart';
 import 'solve_controller.dart';
 import 'stars.dart';
 import 'unlocking.dart';
+import 'walkthrough_screen.dart';
 
 class SolveScreen extends StatefulWidget {
   const SolveScreen({
@@ -221,6 +222,50 @@ class _SolveScreenState extends State<SolveScreen>
     if (startOver ?? false) controller.restart();
   }
 
+  /// Walks through the rest of the puzzle with explanations. It counts as a
+  /// hint, and the clock waits while the player reads.
+  Future<void> _openGuide() async {
+    if (controller.hintsUsed == 0) {
+      final go = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Open the step-by-step guide?'),
+          content: const Text(
+            'It explains every move from where you are now, so it counts as '
+            'a hint.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Not yet'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Show me'),
+            ),
+          ],
+        ),
+      );
+      if (go != true || !mounted) return;
+    }
+    controller.useGuide();
+    final wasPaused = controller.paused;
+    if (!wasPaused) controller.togglePause();
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => WalkthroughScreen(
+          start: controller.board.copy(),
+          givens: {
+            for (var c = 0; c < 81; c++)
+              if (controller.board.values[c] != 0) c,
+          },
+          title: 'Guide: ${widget.puzzle.title}',
+        ),
+      ),
+    );
+    if (mounted && !wasPaused && controller.paused) controller.togglePause();
+  }
+
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
     if (event is! KeyDownEvent) return KeyEventResult.ignored;
     final key = event.logicalKey;
@@ -250,6 +295,12 @@ class _SolveScreenState extends State<SolveScreen>
           centerTitle: true,
           title: Text(widget.puzzle.title),
           actions: [
+            if (!controller.solved)
+              IconButton(
+                tooltip: 'Step-by-step guide',
+                icon: const Icon(Icons.school_outlined),
+                onPressed: _openGuide,
+              ),
             if (!controller.solved)
               IconButton(
                 tooltip: controller.paused ? 'Resume' : 'Pause',
