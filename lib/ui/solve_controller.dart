@@ -65,6 +65,15 @@ class SolveController extends ChangeNotifier {
   /// Seconds spent on this puzzle. Only changes through [tick].
   final ValueNotifier<int> seconds = ValueNotifier(0);
 
+  /// A digit the player long-pressed on the number pad: tapping cells now
+  /// fills them with it, until it is tapped again.
+  int? armed;
+
+  /// Cells of the rows, columns and boxes the last placement completed, and a
+  /// counter that changes whenever there is a new set to celebrate.
+  Set<int> completed = const {};
+  int completedSerial = 0;
+
   /// True while the board is hidden and the clock stopped.
   bool paused = false;
   int hintsUsed = 0;
@@ -150,6 +159,7 @@ class SolveController extends ChangeNotifier {
     _board.applyStep(step);
     for (final p in step.placements) {
       _clearMarksAround(p.cell, p.digit);
+      _noteCompleted(p.cell);
     }
     for (final e in step.eliminations) {
       for (final d in e.digits) {
@@ -168,6 +178,26 @@ class SolveController extends ChangeNotifier {
   void _dropHint() {
     _pending = null;
     _hintLevel = 0;
+  }
+
+  /// A tap on the board: selects the cell, and fills it when a digit is armed.
+  void tapCell(int cell) {
+    select(cell);
+    final digit = armed;
+    if (digit == null || _board.values[cell] != 0) return;
+    if (_board.values.where((v) => v == digit).length >= 9) {
+      armed = null;
+      notifyListeners();
+      return;
+    }
+    enter(digit);
+  }
+
+  /// Arms [digit] for filling several cells, or disarms it when it already is.
+  void toggleArmed(int digit) {
+    armed = armed == digit ? null : digit;
+    _clearMessage();
+    notifyListeners();
   }
 
   void select(int cell) {
@@ -242,6 +272,16 @@ class SolveController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void _noteCompleted(int cell) {
+    final cells = <int>{
+      for (final unit in Board.unitsOf(cell))
+        if (unit.cells.every((c) => _board.values[c] != 0)) ...unit.cells,
+    };
+    if (cells.isEmpty) return;
+    completed = cells;
+    completedSerial++;
+  }
+
   /// Drops [digit] from the notes of [cell] and its peers once it is placed.
   void _clearMarksAround(int cell, int digit) {
     marks[cell] = 0;
@@ -271,6 +311,7 @@ class SolveController extends ChangeNotifier {
     _push(null);
     _board.place(cell, digit);
     _clearMarksAround(cell, digit);
+    _noteCompleted(cell);
     wrong.remove(cell);
     _dropHint();
     _stuck = false;
@@ -317,6 +358,7 @@ class SolveController extends ChangeNotifier {
     marks = List.filled(81, 0);
     seconds.value = 0;
     paused = false;
+    armed = null;
     _history.clear();
     wrong.clear();
     _dropHint();

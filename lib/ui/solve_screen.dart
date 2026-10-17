@@ -43,7 +43,8 @@ class SolveScreen extends StatefulWidget {
   State<SolveScreen> createState() => _SolveScreenState();
 }
 
-class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
+class _SolveScreenState extends State<SolveScreen>
+    with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late final ProgressStore store = ProgressScope.read(context);
   late final SolveController controller = _create();
 
@@ -53,6 +54,15 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
 
   /// A level this solve just opened, to tell the player.
   int? _newlyUnlockedLevel;
+
+  /// Fades the flash over rows, columns and boxes the player just completed.
+  late final AnimationController _flash = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+  int _seenCompleted = 0;
+  int _seenMistakes = 0;
+  int _seenMoves = 0;
 
   Timer? _clock;
   bool _inBackground = false;
@@ -84,6 +94,9 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
     super.initState();
     _savedSignature = _signature();
     controller.addListener(_onChange);
+    _seenCompleted = controller.completedSerial;
+    _seenMistakes = controller.mistakes;
+    _seenMoves = controller.moveCount;
     WidgetsBinding.instance.addObserver(this);
     _clock = Timer.periodic(const Duration(seconds: 1), (_) {
       if (!_inBackground) controller.tick();
@@ -98,6 +111,7 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     _clock?.cancel();
+    _flash.dispose();
     WidgetsBinding.instance.removeObserver(this);
     controller.removeListener(_onChange);
     controller.dispose();
@@ -109,7 +123,23 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
       '${controller.movesShown}';
 
   /// Saves the game when it changed, and records the solve when it is done.
+  /// Light feedback for what the last action did.
+  void _feedback() {
+    if (controller.mistakes > _seenMistakes) {
+      HapticFeedback.heavyImpact();
+    } else if (controller.completedSerial != _seenCompleted) {
+      HapticFeedback.mediumImpact();
+      if (!controller.solved) _flash.forward(from: 0);
+    } else if (controller.moveCount > _seenMoves) {
+      HapticFeedback.selectionClick();
+    }
+    _seenMistakes = controller.mistakes;
+    _seenCompleted = controller.completedSerial;
+    _seenMoves = controller.moveCount;
+  }
+
   void _onChange() {
+    _feedback();
     _checkMistakeLimit();
     if (!widget.recordProgress) return;
     if (controller.solved) {
@@ -121,6 +151,7 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
           dailyKey,
           mistakes: controller.mistakes,
           hints: controller.hintsUsed,
+          seconds: controller.seconds.value,
         );
         return;
       }
@@ -130,6 +161,7 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
         widget.puzzle.id,
         mistakes: controller.mistakes,
         hints: controller.hintsUsed,
+        seconds: controller.seconds.value,
       );
       if (!wasOpen &&
           isLevelUnlocked(store, next) &&
@@ -260,15 +292,20 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
                   hints: controller.hintsUsed,
                   seconds: controller.seconds,
                 );
-                final liveBoard = BoardView(
-                  board: controller.board,
-                  givens: controller.givens,
-                  showCandidates: controller.showCandidates,
-                  step: controller.shown,
-                  selected: controller.selected,
-                  wrong: controller.wrong,
-                  marks: controller.marks,
-                  onCellTap: controller.select,
+                final liveBoard = AnimatedBuilder(
+                  animation: _flash,
+                  builder: (context, _) => BoardView(
+                    board: controller.board,
+                    givens: controller.givens,
+                    showCandidates: controller.showCandidates,
+                    step: controller.shown,
+                    selected: controller.selected,
+                    wrong: controller.wrong,
+                    marks: controller.marks,
+                    flash: _flash.isAnimating ? controller.completed : const {},
+                    flashProgress: _flash.value,
+                    onCellTap: controller.tapCell,
+                  ),
                 );
                 final board = controller.paused
                     ? _PausedBoard(onResume: controller.togglePause)
@@ -292,7 +329,10 @@ class _SolveScreenState extends State<SolveScreen> with WidgetsBindingObserver {
                       : store.dailyStreak,
                 );
 
-                if (constraints.maxWidth >= 840) {
+                // Side by side on wide screens and on phones turned sideways, where a
+                // full-width board would not fit the height.
+                if (constraints.maxWidth >= 840 ||
+                    constraints.maxWidth > constraints.maxHeight * 1.2) {
                   return Padding(
                     padding: const EdgeInsets.all(24),
                     child: Row(
@@ -489,9 +529,12 @@ class _StatusLine extends StatelessWidget {
     final theme = Theme.of(context);
     if (controller.solved) return const SizedBox.shrink();
 
+    final armed = controller.armed;
     final text =
         controller.message ??
-        (controller.selected == null
+        (armed != null
+            ? 'Tap cells to fill in $armed. Tap $armed again to stop.'
+            : controller.selected == null
             ? 'Tap a cell, then pick a digit.'
             : controller.board.values[controller.selected!] != 0
             ? 'Tap an empty cell to continue.'
@@ -690,8 +733,24 @@ class _NumberPad extends StatelessWidget {
                   return InkWell(
                     key: Key('digit-$digit'),
                     borderRadius: BorderRadius.circular(12),
-                    onTap: done ? null : () => controller.enter(digit),
-                    child: Padding(
+                    onTap: done
+                        ? null
+                        : () => controller.armed == null
+                              ? controller.enter(digit)
+                              : controller.toggleArmed(digit),
+                    onLongPress: done
+                        ? null
+                        : () {
+                            HapticFeedback.selectionClick();
+                            controller.toggleArmed(digit);
+                          },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: controller.armed == digit
+                            ? scheme.primaryContainer
+                            : null,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
                         '$digit',

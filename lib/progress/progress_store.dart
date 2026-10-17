@@ -5,15 +5,24 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 /// How well the player solved a puzzle.
 class PuzzleRecord {
-  const PuzzleRecord({required this.mistakes, required this.hints});
+  const PuzzleRecord({
+    required this.mistakes,
+    required this.hints,
+    this.seconds,
+  });
 
   factory PuzzleRecord.fromJson(Map<String, Object?> json) => PuzzleRecord(
     mistakes: json['mistakes']! as int,
     hints: json['hints']! as int,
+    seconds: json['seconds'] as int?,
   );
 
   final int mistakes;
   final int hints;
+
+  /// The fastest solve in seconds, or null for results saved before the clock
+  /// existed.
+  final int? seconds;
 
   /// 3 for a clean solve, minus one for any mistakes and one for any hints.
   int get stars => 3 - (mistakes > 0 ? 1 : 0) - (hints > 0 ? 1 : 0);
@@ -21,7 +30,23 @@ class PuzzleRecord {
   bool isBetterThan(PuzzleRecord other) =>
       mistakes + hints < other.mistakes + other.hints;
 
-  Map<String, Object?> toJson() => {'mistakes': mistakes, 'hints': hints};
+  /// This result or [other], whichever is better, with the faster time of
+  /// the two (the fastest solve need not be the cleanest).
+  PuzzleRecord bestWith(PuzzleRecord other) {
+    final best = other.isBetterThan(this) ? other : this;
+    final times = [?seconds, ?other.seconds];
+    return PuzzleRecord(
+      mistakes: best.mistakes,
+      hints: best.hints,
+      seconds: times.isEmpty ? null : times.reduce((a, b) => a < b ? a : b),
+    );
+  }
+
+  Map<String, Object?> toJson() => {
+    'mistakes': mistakes,
+    'hints': hints,
+    'seconds': ?seconds,
+  };
 }
 
 /// What the player has done: puzzles solved, games in progress, and whether
@@ -112,6 +137,12 @@ class ProgressStore extends ChangeNotifier {
 
   int get solvedCount => _records.length;
 
+  /// Every practice result, by puzzle id.
+  Map<String, PuzzleRecord> get records => Map.unmodifiable(_records);
+
+  /// How many daily puzzles the player has solved.
+  int get dailySolvedCount => _daily.length;
+
   /// A saved game for [puzzleId], or null.
   Map<String, Object?>? savedGame(String puzzleId) => _games[puzzleId];
 
@@ -122,10 +153,15 @@ class ProgressStore extends ChangeNotifier {
     String puzzleId, {
     required int mistakes,
     required int hints,
+    int? seconds,
   }) {
-    final record = PuzzleRecord(mistakes: mistakes, hints: hints);
+    final record = PuzzleRecord(
+      mistakes: mistakes,
+      hints: hints,
+      seconds: seconds,
+    );
     final old = _records[puzzleId];
-    if (old == null || record.isBetterThan(old)) _records[puzzleId] = record;
+    _records[puzzleId] = old == null ? record : old.bestWith(record);
     _games.remove(puzzleId);
     _writeRecords();
     _prefs?.remove('$_gamePrefix$puzzleId');
@@ -169,10 +205,19 @@ class ProgressStore extends ChangeNotifier {
   }
 
   /// Remembers a daily solve, keeping the better of this and any earlier one.
-  void recordDaily(String dayKey, {required int mistakes, required int hints}) {
-    final record = PuzzleRecord(mistakes: mistakes, hints: hints);
+  void recordDaily(
+    String dayKey, {
+    required int mistakes,
+    required int hints,
+    int? seconds,
+  }) {
+    final record = PuzzleRecord(
+      mistakes: mistakes,
+      hints: hints,
+      seconds: seconds,
+    );
     final old = _daily[dayKey];
-    if (old == null || record.isBetterThan(old)) _daily[dayKey] = record;
+    _daily[dayKey] = old == null ? record : old.bestWith(record);
     _games.remove(dailyGameId(dayKey));
     _prefs?.remove('$_gamePrefix${dailyGameId(dayKey)}');
     _prefs?.setString(
