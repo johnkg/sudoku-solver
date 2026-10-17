@@ -136,6 +136,13 @@ class SolveController extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Records that the player opened the step-by-step guide, which counts as a
+  /// hint.
+  void useGuide() {
+    hintsUsed++;
+    notifyListeners();
+  }
+
   /// Goes one stage up the hint ladder.
   void moreHelp() {
     if (_pending == null || _hintLevel >= 3) return;
