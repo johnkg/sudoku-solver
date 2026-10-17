@@ -4,6 +4,7 @@ import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import 'learn_tab.dart';
 import 'practice_tab.dart';
+import 'solver_tab.dart';
 import 'stats_screen.dart';
 
 class SudokuApp extends StatelessWidget {
@@ -119,7 +120,7 @@ class _AppShellState extends State<AppShell> {
       ),
       body: IndexedStack(
         index: index,
-        children: const [LearnTab(), PracticeTab()],
+        children: const [LearnTab(), PracticeTab(), SolverTab()],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
@@ -134,6 +135,11 @@ class _AppShellState extends State<AppShell> {
             icon: Icon(Icons.grid_on_outlined),
             selectedIcon: Icon(Icons.grid_on),
             label: 'Practice',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.edit_note_outlined),
+            selectedIcon: Icon(Icons.edit_note),
+            label: 'Solver',
           ),
         ],
       ),
