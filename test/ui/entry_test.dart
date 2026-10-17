@@ -177,6 +177,87 @@ void main() {
     });
   });
 
+  group('filling several cells', () {
+    test('an armed digit fills each cell tapped, until disarmed', () {
+      final empties = [
+        for (var i = 0; i < 81; i++)
+          if (c.board.values[i] == 0) i,
+      ];
+      // A cell where the armed digit is right, and another cell where it is
+      // not.
+      final digit = right;
+      c.toggleArmed(digit);
+      expect(c.armed, digit);
+      c.tapCell(cell);
+      expect(c.board.values[cell], digit);
+
+      final other = empties.firstWhere(
+        (i) =>
+            i != cell &&
+            c.board.values[i] == 0 &&
+            c.solution.values[i] != digit,
+      );
+      c.tapCell(other);
+      expect(c.mistakes, 1);
+      expect(c.wrong[other], digit);
+
+      c.toggleArmed(digit);
+      expect(c.armed, isNull);
+      c.tapCell(cell);
+      expect(c.message, isNot(startsWith('Not')));
+    });
+
+    test('tapping a filled cell with a digit armed only selects it', () {
+      c.toggleArmed(right);
+      final given = c.givens.first;
+      c.tapCell(given);
+      expect(c.selected, given);
+      expect(c.mistakes, 0);
+    });
+
+    test('restart disarms', () {
+      c.toggleArmed(3);
+      c.restart();
+      expect(c.armed, isNull);
+    });
+  });
+
+  group('completed units', () {
+    test('placing the last digit of a unit reports its cells', () {
+      var guard = 0;
+      while (!c.solved && c.completedSerial == 0 && guard++ < 100) {
+        c.findNextStep();
+        c.applyPending();
+      }
+      expect(c.completedSerial, greaterThan(0));
+      expect(c.completed, isNotEmpty);
+      expect(c.completed.every((i) => c.board.values[i] != 0), isTrue);
+    });
+  });
+
+  group('clock', () {
+    test('ticks, pauses, restarts and is saved', () {
+      c.tick();
+      c.tick();
+      expect(c.seconds.value, 2);
+      c.togglePause();
+      c.tick();
+      expect(c.seconds.value, 2);
+      c.togglePause();
+
+      final again = SolveController.restore(warmUp.text, c.toJson());
+      expect(again.seconds.value, 2);
+
+      c.restart();
+      expect(c.seconds.value, 0);
+    });
+
+    test('games saved before the clock existed start at zero', () {
+      final json = c.toJson()..remove('seconds');
+      expect(SolveController.restore(warmUp.text, json).seconds.value, 0);
+    });
+  });
+
   group('history and hints', () {
     test('undo reverses a player move but keeps the mistake count', () {
       c.enter(wrongButLegal);
@@ -285,8 +366,85 @@ void main() {
       expect(find.textContaining('Not $wrongButLegal.'), findsOneWidget);
       expect(
         tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
-        '1',
+        '1/3',
       );
+    });
+
+    testWidgets('three mistakes offer to start over', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      await tapCell(tester, cell);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsOneWidget);
+
+      await tester.tap(find.text('Keep playing'));
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsNothing);
+      await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsNothing);
+    });
+
+    testWidgets('start over from the limit dialog resets the game', (
+      tester,
+    ) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      await tapCell(tester, cell);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Start over'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
+        '0/3',
+      );
+    });
+
+    testWidgets('the clock runs, and stops while paused', (tester) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      String time() =>
+          tester.widget<Text>(find.byKey(const Key('time-value'))).data!;
+      expect(time(), '0:00');
+      await tester.pump(const Duration(seconds: 3));
+      expect(time(), '0:03');
+
+      await tester.tap(find.byTooltip('Pause'));
+      await tester.pump();
+      expect(find.byType(BoardView), findsNothing);
+      expect(find.text('Paused'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      expect(time(), '0:03');
+
+      await tester.tap(find.text('Paused'));
+      await tester.pump();
+      expect(find.byType(BoardView), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      expect(time(), '0:05');
+    });
+
+    testWidgets('long-pressing a digit arms it for tapping cells', (
+      tester,
+    ) async {
+      bigScreen(tester);
+      await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
+      await tester.longPress(find.byKey(Key('digit-$right')));
+      await tester.pump();
+      expect(
+        find.text('Tap cells to fill in $right. Tap $right again to stop.'),
+        findsOneWidget,
+      );
+      await tapCell(tester, cell);
+      await tester.pumpAndSettle();
+      expect(find.text('1 move so far'), findsOneWidget);
     });
 
     testWidgets('keyboard digits and arrows work', (tester) async {

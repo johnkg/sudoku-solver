@@ -14,6 +14,8 @@ class BoardView extends StatelessWidget {
     this.selected,
     this.wrong = const {},
     this.marks,
+    this.flash = const {},
+    this.flashProgress = 1,
     this.onCellTap,
   });
 
@@ -36,6 +38,10 @@ class BoardView extends StatelessWidget {
   /// drawn instead of the board's candidates, except in cells a hint is
   /// about, which show the real candidates.
   final List<int>? marks;
+
+  /// Cells to flash, and how far the flash has faded: 0 just started, 1 gone.
+  final Set<int> flash;
+  final double flashProgress;
 
   /// Called with a cell index when the player taps the board.
   final ValueChanged<int>? onCellTap;
@@ -71,6 +77,8 @@ class BoardView extends StatelessWidget {
                 selected: selected,
                 wrong: wrong,
                 marks: marks,
+                flash: flash,
+                flashProgress: flashProgress,
                 scheme: Theme.of(context).colorScheme,
               ),
             ),
@@ -91,6 +99,8 @@ class _BoardPainter extends CustomPainter {
     required this.selected,
     required this.wrong,
     required this.marks,
+    required this.flash,
+    required this.flashProgress,
     required this.scheme,
   });
 
@@ -102,6 +112,8 @@ class _BoardPainter extends CustomPainter {
   final int? selected;
   final Map<int, int> wrong;
   final List<int>? marks;
+  final Set<int> flash;
+  final double flashProgress;
   final ColorScheme scheme;
 
   @override
@@ -156,12 +168,20 @@ class _BoardPainter extends CustomPainter {
       scheme.surfaceContainerLowest,
     );
 
+    // The placed digits a wrong digit clashes with.
+    final clashes = {
+      for (final entry in wrong.entries)
+        for (final peer in Board.peers[entry.key])
+          if (board.values[peer] == entry.value) peer,
+    };
+
     for (var c = 0; c < 81; c++) {
       Color? fill;
       if (peers.contains(c)) fill = peerTint;
       if (selectedValue != 0 && board.values[c] == selectedValue) {
         fill = scheme.secondaryContainer;
       }
+      if (clashes.contains(c)) fill = scheme.errorContainer;
       if (c == selected) fill = selectedTint;
       if (placed.containsKey(c)) {
         fill = scheme.tertiaryContainer;
@@ -171,6 +191,15 @@ class _BoardPainter extends CustomPainter {
         fill = scheme.primaryContainer;
       }
       if (fill != null) canvas.drawRect(rectOf(c), Paint()..color = fill);
+      if (flash.contains(c) && flashProgress < 1) {
+        canvas.drawRect(
+          rectOf(c),
+          Paint()
+            ..color = scheme.primary.withValues(
+              alpha: 0.45 * (1 - flashProgress),
+            ),
+        );
+      }
     }
 
     _drawGrid(canvas, size, cell);

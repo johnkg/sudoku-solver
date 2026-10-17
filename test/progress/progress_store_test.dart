@@ -18,6 +18,28 @@ void main() {
     });
   });
 
+  group('solve times', () {
+    test('the fastest time is kept even when a slower solve is cleaner', () {
+      final store = ProgressStore.memory();
+      store.recordSolve('a', mistakes: 1, hints: 0, seconds: 90);
+      store.recordSolve('a', mistakes: 0, hints: 0, seconds: 140);
+      final record = store.recordFor('a')!;
+      expect(record.mistakes, 0);
+      expect(record.seconds, 90);
+    });
+
+    test('older records without a time still load and merge', () {
+      final old = PuzzleRecord.fromJson({'mistakes': 1, 'hints': 0});
+      expect(old.seconds, isNull);
+      final merged = old.bestWith(
+        const PuzzleRecord(mistakes: 2, hints: 0, seconds: 75),
+      );
+      expect(merged.mistakes, 1);
+      expect(merged.seconds, 75);
+      expect(merged.toJson()['seconds'], 75);
+    });
+  });
+
   group('ProgressStore (memory)', () {
     late ProgressStore store;
     setUp(() => store = ProgressStore.memory());
