@@ -6,6 +6,7 @@ import 'board_view.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'solve_screen.dart';
+import 'step_text.dart';
 
 class LessonScreen extends StatefulWidget {
   const LessonScreen({super.key, required this.lesson});
@@ -73,7 +74,7 @@ class _LessonScreenState extends State<LessonScreen> {
         ),
         const SizedBox(height: 12),
         Text(
-          view == _View.before ? step.explanation : _result(step),
+          view == _View.before ? step.explanation : describeResult(step),
           style: theme.textTheme.bodyLarge,
         ),
       ],
@@ -177,16 +178,5 @@ class _LessonScreenState extends State<LessonScreen> {
         ),
       ),
     );
-  }
-
-  /// A plain description of what the step changed.
-  String _result(Step step) {
-    final parts = [
-      for (final p in step.placements)
-        '${Board.cellName(p.cell)} is now ${p.digit}.',
-      for (final e in step.eliminations)
-        'Removed ${e.digits.join(', ')} from ${Board.cellName(e.cell)}.',
-    ];
-    return parts.join(' ');
   }
 }
