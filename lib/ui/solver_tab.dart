@@ -2,6 +2,8 @@ import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 
 import '../engine/engine.dart';
+import '../scan/photo_scan.dart';
+import '../scan/scan_result.dart';
 import 'board_view.dart';
 import 'walkthrough_screen.dart';
 
@@ -18,7 +20,11 @@ List<int>? parsePuzzleText(String text) {
 /// A blank grid to type any puzzle into, then a button to be taught how to
 /// solve it.
 class SolverTab extends StatefulWidget {
-  const SolverTab({super.key});
+  const SolverTab({super.key, this.scanner});
+
+  /// Reads a puzzle from a photo. Defaults to the browser's reader where one
+  /// exists; tests pass their own.
+  final PhotoScanner? scanner;
 
   @override
   State<SolverTab> createState() => _SolverTabState();
@@ -28,6 +34,10 @@ class _SolverTabState extends State<SolverTab> {
   final cells = List.filled(81, 0);
   final focus = FocusNode();
   int? selected;
+
+  /// Cells read from a photo that the reader was unsure about.
+  Set<int> doubtful = {};
+  String? scanNote;
 
   @override
   void dispose() {
@@ -46,7 +56,11 @@ class _SolverTabState extends State<SolverTab> {
   void _enter(int digit) {
     final cell = selected;
     if (cell == null) return;
-    setState(() => cells[cell] = digit);
+    setState(() {
+      cells[cell] = digit;
+      doubtful.remove(cell);
+      scanNote = null;
+    });
   }
 
   KeyEventResult _onKey(FocusNode node, KeyEvent event) {
@@ -105,6 +119,8 @@ class _SolverTabState extends State<SolverTab> {
     setState(() {
       cells.fillRange(0, 81, 0);
       selected = null;
+      doubtful = {};
+      scanNote = null;
     });
   }
 
@@ -118,6 +134,59 @@ class _SolverTabState extends State<SolverTab> {
     setState(() {
       cells.setAll(0, parsed);
       selected = null;
+      doubtful = {};
+      scanNote = null;
+    });
+  }
+
+  PhotoScanner? get _scanner =>
+      widget.scanner ?? (photoScanSupported ? scanPuzzlePhoto : null);
+
+  Future<void> _scan() async {
+    final scanner = _scanner!;
+    final navigator = Navigator.of(context);
+    var reading = false;
+    ScanResult? result;
+    String? failure;
+    try {
+      result = await scanner(() {
+        reading = true;
+        showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const PopScope(
+            canPop: false,
+            child: AlertDialog(
+              content: Row(
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(width: 20),
+                  Expanded(child: Text('Reading the photo…')),
+                ],
+              ),
+            ),
+          ),
+        );
+      });
+    } on ScanFailure catch (e) {
+      failure = e.message;
+    }
+    if (reading) navigator.pop();
+    if (!mounted) return;
+    if (failure != null) return _say(failure);
+
+    final parsed = result == null ? null : parsePuzzleText(result.text);
+    if (parsed == null) return;
+    final found = parsed.where((v) => v != 0).length;
+    if (found == 0) return _say('I could not see any digits in that photo.');
+    setState(() {
+      cells.setAll(0, parsed);
+      selected = null;
+      doubtful = {...result!.uncertain};
+      scanNote = doubtful.isEmpty
+          ? 'Read $found digits. Check each one against your photo.'
+          : 'Read $found digits. The tinted cells are ones I was unsure '
+                'about. Check every digit against your photo.';
     });
   }
 
@@ -181,6 +250,7 @@ class _SolverTabState extends State<SolverTab> {
       },
       showCandidates: false,
       selected: selected,
+      marked: doubtful,
       wrong: {for (final c in bad) c: cells[c]},
       onCellTap: (c) {
         focus.requestFocus();
@@ -191,9 +261,10 @@ class _SolverTabState extends State<SolverTab> {
     final status = bad.isNotEmpty
         ? 'Red digits break a rule: the same digit twice in a row, column or '
               'box.'
-        : filled == 0
-        ? 'Tap a cell, then a digit, to type in your puzzle.'
-        : '$filled digit${filled == 1 ? '' : 's'} entered.';
+        : scanNote ??
+              (filled == 0
+                  ? 'Tap a cell, then a digit, to type in your puzzle.'
+                  : '$filled digit${filled == 1 ? '' : 's'} entered.');
 
     final controls = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -256,6 +327,15 @@ class _SolverTabState extends State<SolverTab> {
             ),
           ],
         ),
+        if (_scanner != null) ...[
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const Key('scan-photo'),
+            onPressed: _scan,
+            icon: const Icon(Icons.photo_camera_outlined),
+            label: const Text('Scan from a photo'),
+          ),
+        ],
         const SizedBox(height: 12),
         FilledButton.icon(
           key: const Key('teach-me'),
