@@ -5,6 +5,7 @@ import '../lessons/lessons.dart';
 import 'board_view.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
+import 'quiz_screen.dart';
 import 'solve_screen.dart';
 import 'step_text.dart';
 
@@ -107,6 +108,21 @@ class _LessonScreenState extends State<LessonScreen> {
       children: [
         Text('Practice', style: theme.textTheme.titleMedium),
         const SizedBox(height: 8),
+        Card(
+          margin: const EdgeInsets.only(bottom: 8),
+          child: ListTile(
+            key: const Key('quiz-me'),
+            leading: const Icon(Icons.quiz_outlined),
+            title: const Text('Quiz me'),
+            subtitle: Text('Spot the ${lesson.technique.label} on real boards'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => QuizScreen(technique: lesson.technique),
+              ),
+            ),
+          ),
+        ),
         if (practice.isEmpty)
           Text(
             'There is no practice puzzle for this technique yet. It turns up '

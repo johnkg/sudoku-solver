@@ -16,6 +16,7 @@ class BoardView extends StatelessWidget {
     this.marks,
     this.flash = const {},
     this.flashProgress = 1,
+    this.marked = const {},
     this.onCellTap,
   });
 
@@ -42,6 +43,9 @@ class BoardView extends StatelessWidget {
   /// Cells to flash, and how far the flash has faded: 0 just started, 1 gone.
   final Set<int> flash;
   final double flashProgress;
+
+  /// Cells the player has picked out, tinted like the selected cell.
+  final Set<int> marked;
 
   /// Called with a cell index when the player taps the board.
   final ValueChanged<int>? onCellTap;
@@ -79,6 +83,7 @@ class BoardView extends StatelessWidget {
                 marks: marks,
                 flash: flash,
                 flashProgress: flashProgress,
+                marked: marked,
                 scheme: Theme.of(context).colorScheme,
               ),
             ),
@@ -101,6 +106,7 @@ class _BoardPainter extends CustomPainter {
     required this.marks,
     required this.flash,
     required this.flashProgress,
+    required this.marked,
     required this.scheme,
   });
 
@@ -114,6 +120,7 @@ class _BoardPainter extends CustomPainter {
   final List<int>? marks;
   final Set<int> flash;
   final double flashProgress;
+  final Set<int> marked;
   final ColorScheme scheme;
 
   @override
@@ -182,7 +189,7 @@ class _BoardPainter extends CustomPainter {
         fill = scheme.secondaryContainer;
       }
       if (clashes.contains(c)) fill = scheme.errorContainer;
-      if (c == selected) fill = selectedTint;
+      if (c == selected || marked.contains(c)) fill = selectedTint;
       if (placed.containsKey(c)) {
         fill = scheme.tertiaryContainer;
       } else if (removed.containsKey(c)) {
