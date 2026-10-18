@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_solver/progress/progress_store.dart';
 import 'package:sudoku_solver/ui/app.dart';
 import 'package:sudoku_solver/ui/board_view.dart';
+import 'package:sudoku_solver/scan/scan_result.dart';
 import 'package:sudoku_solver/ui/solver_tab.dart';
 
 import '../support.dart';
@@ -166,5 +167,82 @@ void main() {
       find.text('The rest was filled in by trial and error.'),
       findsOneWidget,
     );
+  });
+
+  group('scanning a photo', () {
+    Future<void> openWith(WidgetTester tester, PhotoScanner scanner) async {
+      phoneSize(tester);
+      await tester.pumpWidget(
+        testApp(Scaffold(body: SolverTab(scanner: scanner))),
+      );
+    }
+
+    testWidgets('fills the grid and tints the cells it doubts', (tester) async {
+      var picked = false;
+      await openWith(tester, (onPicked) async {
+        picked = true;
+        onPicked();
+        await Future<void>.delayed(const Duration(milliseconds: 10));
+        return ScanResult(warmUp.text, {2, 4});
+      });
+      await tester.tap(find.byKey(const Key('scan-photo')));
+      await tester.pump();
+      expect(find.text('Reading the photo…'), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 20));
+      await tester.pumpAndSettle();
+
+      expect(picked, isTrue);
+      expect(find.text('Reading the photo…'), findsNothing);
+      expect(find.textContaining('tinted cells'), findsOneWidget);
+      expect(tester.widget<BoardView>(find.byType(BoardView)).marked, {2, 4});
+      expect(
+        tester
+            .widget<BoardView>(find.byType(BoardView))
+            .board
+            .values
+            .where((v) => v != 0)
+            .length,
+        30,
+      );
+
+      // Typing over a doubtful cell clears only that cell's tint.
+      await tester.tapAt(
+        tester.getTopLeft(find.byType(BoardView)) +
+            Offset(tester.getSize(find.byType(BoardView)).width / 9 * 2.5, 20),
+      );
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('entry-4')));
+      await tester.pump();
+      expect(tester.widget<BoardView>(find.byType(BoardView)).marked, {4});
+    });
+
+    testWidgets('does nothing if no photo is chosen', (tester) async {
+      await openWith(tester, (onPicked) async => null);
+      await tester.tap(find.byKey(const Key('scan-photo')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Tap a cell, then a digit, to type in your puzzle.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('shows why a photo could not be read', (tester) async {
+      await openWith(tester, (onPicked) async {
+        onPicked();
+        throw const ScanFailure('I could not find the grid in that photo.');
+      });
+      await tester.tap(find.byKey(const Key('scan-photo')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('I could not find the grid in that photo.'),
+        findsOneWidget,
+      );
+      expect(find.text('Reading the photo…'), findsNothing);
+    });
+
+    testWidgets('is not offered where photos cannot be read', (tester) async {
+      await openSolver(tester);
+      expect(find.byKey(const Key('scan-photo')), findsNothing);
+    });
   });
 }
