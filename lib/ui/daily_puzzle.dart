@@ -119,7 +119,10 @@ class DailyPuzzleCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 12),
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 FilledButton.icon(
                   onPressed: () => playDailyPuzzle(context),
@@ -132,10 +135,7 @@ class DailyPuzzleCard extends StatelessWidget {
                         : 'Play today\'s puzzle',
                   ),
                 ),
-                if (record != null) ...[
-                  const SizedBox(width: 12),
-                  Stars(count: record.stars),
-                ],
+                if (record != null) Stars(count: record.stars),
               ],
             ),
           ],

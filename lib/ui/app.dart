@@ -2,15 +2,26 @@ import 'package:flutter/material.dart';
 
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
+import '../settings/settings.dart';
 import 'learn_tab.dart';
 import 'practice_tab.dart';
+import 'settings_screen.dart';
 import 'solver_tab.dart';
 import 'stats_screen.dart';
 
 class SudokuApp extends StatelessWidget {
-  const SudokuApp({super.key, required this.store});
+  SudokuApp({
+    super.key,
+    required this.store,
+    this.initialPuzzle,
+    Settings? settings,
+  }) : settings = settings ?? Settings.memory();
 
   final ProgressStore store;
+  final Settings settings;
+
+  /// A puzzle from a shared link. The app opens on the Solver tab with it.
+  final List<int>? initialPuzzle;
 
   @override
   Widget build(BuildContext context) {
@@ -30,31 +41,36 @@ class SudokuApp extends StatelessWidget {
       ),
     );
 
-    return ProgressScope(
-      store: store,
-      child: MaterialApp(
-        title: 'Sudoku Technique Teacher',
-        debugShowCheckedModeBanner: false,
-        theme: theme(Brightness.light),
-        darkTheme: theme(Brightness.dark),
-        home: const AppShell(),
+    return SettingsScope(
+      settings: settings,
+      child: ProgressScope(
+        store: store,
+        child: MaterialApp(
+          title: 'Sudoku Technique Teacher',
+          debugShowCheckedModeBanner: false,
+          theme: theme(Brightness.light),
+          darkTheme: theme(Brightness.dark),
+          home: AppShell(initialPuzzle: initialPuzzle),
+        ),
       ),
     );
   }
 }
 
-enum _MenuAction { stats, unlockAll, reset }
+enum _MenuAction { stats, settings, unlockAll, reset }
 
 /// Two tabs: lessons to learn from, puzzles to practise on.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({super.key, this.initialPuzzle});
+
+  final List<int>? initialPuzzle;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
-  int index = 0;
+  late int index = widget.initialPuzzle == null ? 0 : 2;
 
   Future<void> _onMenu(_MenuAction action) async {
     final store = ProgressScope.read(context);
@@ -62,6 +78,10 @@ class _AppShellState extends State<AppShell> {
       case _MenuAction.stats:
         await Navigator.of(context)
             .push(MaterialPageRoute<void>(builder: (_) => const StatsScreen()));
+      case _MenuAction.settings:
+        await Navigator.of(
+          context,
+        ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
       case _MenuAction.unlockAll:
         store.unlockAllLevels();
       case _MenuAction.reset:
@@ -105,6 +125,10 @@ class _AppShellState extends State<AppShell> {
                 value: _MenuAction.stats,
                 child: Text('Statistics'),
               ),
+              const PopupMenuItem(
+                value: _MenuAction.settings,
+                child: Text('Settings'),
+              ),
               PopupMenuItem(
                 value: _MenuAction.unlockAll,
                 enabled: !store.unlockedAll,
@@ -120,7 +144,11 @@ class _AppShellState extends State<AppShell> {
       ),
       body: IndexedStack(
         index: index,
-        children: const [LearnTab(), PracticeTab(), SolverTab()],
+        children: [
+          const LearnTab(),
+          const PracticeTab(),
+          SolverTab(initialCells: widget.initialPuzzle),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,

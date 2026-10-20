@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart' hide Step;
+import 'package:flutter/semantics.dart';
 
 import '../engine/engine.dart';
+import '../settings/settings.dart';
 
 /// Draws the grid, digits, pencil marks, and the highlights for [step].
 class BoardView extends StatelessWidget {
@@ -52,7 +54,15 @@ class BoardView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final patterns =
+        context
+            .dependOnInheritedWidgetOfExactType<SettingsScope>()
+            ?.notifier
+            ?.patterns ??
+        false;
+
     return Semantics(
+      container: true,
       label: 'Sudoku board',
       child: AspectRatio(
         aspectRatio: 1,
@@ -84,6 +94,8 @@ class BoardView extends StatelessWidget {
                 flash: flash,
                 flashProgress: flashProgress,
                 marked: marked,
+                patterns: patterns,
+                onTap: onCellTap,
                 scheme: Theme.of(context).colorScheme,
               ),
             ),
@@ -107,6 +119,8 @@ class _BoardPainter extends CustomPainter {
     required this.flash,
     required this.flashProgress,
     required this.marked,
+    required this.patterns,
+    required this.onTap,
     required this.scheme,
   });
 
@@ -121,6 +135,8 @@ class _BoardPainter extends CustomPainter {
   final Set<int> flash;
   final double flashProgress;
   final Set<int> marked;
+  final bool patterns;
+  final ValueChanged<int>? onTap;
   final ColorScheme scheme;
 
   @override
@@ -198,6 +214,24 @@ class _BoardPainter extends CustomPainter {
         fill = scheme.primaryContainer;
       }
       if (fill != null) canvas.drawRect(rectOf(c), Paint()..color = fill);
+      if (patterns) {
+        if (wrong.containsKey(c)) {
+          _hatch(canvas, rectOf(c), scheme.error, forward: true);
+        } else if (clashes.contains(c)) {
+          _hatch(canvas, rectOf(c), scheme.error, forward: false);
+        } else if (removed.containsKey(c)) {
+          _hatch(canvas, rectOf(c), scheme.error, forward: false);
+        }
+        if (placed.containsKey(c)) {
+          canvas.drawRect(
+            rectOf(c).deflate(2),
+            Paint()
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 3
+              ..color = scheme.tertiary,
+          );
+        }
+      }
       if (flash.contains(c) && flashProgress < 1) {
         canvas.drawRect(
           rectOf(c),
@@ -286,6 +320,33 @@ class _BoardPainter extends CustomPainter {
     }
   }
 
+  /// Thin diagonal lines across [rect], so a state shows without relying on
+  /// colour.
+  void _hatch(Canvas canvas, Rect rect, Color color, {required bool forward}) {
+    canvas.save();
+    canvas.clipRect(rect);
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.55)
+      ..strokeWidth = 1.2;
+    const gap = 7.0;
+    for (var d = -rect.height; d < rect.width; d += gap) {
+      if (forward) {
+        canvas.drawLine(
+          Offset(rect.left + d, rect.bottom),
+          Offset(rect.left + d + rect.height, rect.top),
+          paint,
+        );
+      } else {
+        canvas.drawLine(
+          Offset(rect.left + d, rect.top),
+          Offset(rect.left + d + rect.height, rect.bottom),
+          paint,
+        );
+      }
+    }
+    canvas.restore();
+  }
+
   void _drawGrid(Canvas canvas, Size size, double cell) {
     final thin = Paint()
       ..color = scheme.outlineVariant
@@ -329,6 +390,51 @@ class _BoardPainter extends CustomPainter {
       center - Offset(painter.width / 2, painter.height / 2),
     );
   }
+
+  @override
+  SemanticsBuilderCallback get semanticsBuilder => (size) {
+    final cell = size.width / 9;
+    return [
+      for (var c = 0; c < 81; c++)
+        CustomPainterSemantics(
+          key: ValueKey(c),
+          rect: Rect.fromLTWH(
+            Board.columnOf(c) * cell,
+            Board.rowOf(c) * cell,
+            cell,
+            cell,
+          ),
+          properties: SemanticsProperties(
+            label: _cellLabel(c),
+            selected: c == selected,
+            button: onTap != null,
+            onTap: onTap == null ? null : () => onTap!(c),
+            textDirection: TextDirection.ltr,
+          ),
+        ),
+    ];
+  };
+
+  /// What a screen reader says for [cell]: where it is, and what it holds.
+  String _cellLabel(int cell) {
+    final where =
+        'Row ${Board.rowOf(cell) + 1}, column '
+        '${Board.columnOf(cell) + 1}';
+    final value = board.values[cell];
+    if (value != 0) {
+      return '$where, $value${givens.contains(cell) ? ', given' : ''}';
+    }
+    final mistake = wrong[cell];
+    if (mistake != null) return '$where, $mistake, mistake';
+    if (!showCandidates) return '$where, empty';
+    final notes = digitsOf(marks?[cell] ?? board.candidates[cell]);
+    return notes.isEmpty
+        ? '$where, empty'
+        : '$where, empty, notes ${notes.join(', ')}';
+  }
+
+  @override
+  bool shouldRebuildSemantics(_BoardPainter old) => true;
 
   @override
   bool shouldRepaint(_BoardPainter old) => true;

@@ -8,6 +8,7 @@ import '../engine/engine.dart';
 import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
+import '../settings/settings.dart';
 import 'board_view.dart';
 import 'hint_ladder.dart';
 import 'learn_tab.dart';
@@ -47,6 +48,7 @@ class SolveScreen extends StatefulWidget {
 class _SolveScreenState extends State<SolveScreen>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late final ProgressStore store = ProgressScope.read(context);
+  late final Settings settings = SettingsScope.read(context);
   late final SolveController controller = _create();
 
   /// Changes whenever the game needs saving again.
@@ -70,7 +72,7 @@ class _SolveScreenState extends State<SolveScreen>
 
   /// Whether the mistake limit has already been dealt with, so the dialog
   /// shows once per run of mistakes.
-  late bool _limitHandled = controller.mistakes >= SolveController.maxMistakes;
+  late bool _limitHandled = _limitReached;
 
   SolveController _create() {
     final text = widget.puzzle.text;
@@ -127,12 +129,14 @@ class _SolveScreenState extends State<SolveScreen>
   /// Light feedback for what the last action did.
   void _feedback() {
     if (controller.mistakes > _seenMistakes) {
-      HapticFeedback.heavyImpact();
+      settings.haptic(HapticFeedback.heavyImpact);
     } else if (controller.completedSerial != _seenCompleted) {
-      HapticFeedback.mediumImpact();
-      if (!controller.solved) _flash.forward(from: 0);
+      settings.haptic(HapticFeedback.mediumImpact);
+      if (!controller.solved && !MediaQuery.disableAnimationsOf(context)) {
+        _flash.forward(from: 0);
+      }
     } else if (controller.moveCount > _seenMoves) {
-      HapticFeedback.selectionClick();
+      settings.haptic(HapticFeedback.selectionClick);
     }
     _seenMistakes = controller.mistakes;
     _seenCompleted = controller.completedSerial;
@@ -186,8 +190,11 @@ class _SolveScreenState extends State<SolveScreen>
     }
   }
 
+  bool get _limitReached =>
+      settings.mistakeLimit > 0 && controller.mistakes >= settings.mistakeLimit;
+
   void _checkMistakeLimit() {
-    if (controller.mistakes < SolveController.maxMistakes) {
+    if (!_limitReached) {
       _limitHandled = false;
     } else if (!_limitHandled && !controller.solved) {
       _limitHandled = true;
@@ -204,7 +211,7 @@ class _SolveScreenState extends State<SolveScreen>
       builder: (context) => AlertDialog(
         title: const Text('Out of mistakes'),
         content: Text(
-          'You have made ${SolveController.maxMistakes} mistakes. Start this '
+          'You have made ${settings.mistakeLimit} mistakes. Start this '
           'puzzle over, or keep going with the mistakes counted.',
         ),
         actions: [
@@ -342,6 +349,8 @@ class _SolveScreenState extends State<SolveScreen>
                   mistakes: controller.mistakes,
                   hints: controller.hintsUsed,
                   seconds: controller.seconds,
+                  limit: settings.mistakeLimit,
+                  showClock: settings.showClock,
                 );
                 final liveBoard = AnimatedBuilder(
                   animation: _flash,
@@ -508,12 +517,18 @@ class _StatsRow extends StatelessWidget {
     required this.mistakes,
     required this.hints,
     required this.seconds,
+    required this.limit,
+    required this.showClock,
   });
 
   final int level;
   final int mistakes;
   final int hints;
   final ValueListenable<int> seconds;
+
+  /// The mistake limit, or 0 for none.
+  final int limit;
+  final bool showClock;
 
   @override
   Widget build(BuildContext context) {
@@ -551,18 +566,19 @@ class _StatsRow extends StatelessWidget {
           stat('Level $level', levelNames[level] ?? ''),
           stat(
             'Mistakes',
-            '$mistakes/${SolveController.maxMistakes}',
+            limit == 0 ? '$mistakes' : '$mistakes/$limit',
             valueKey: const Key('mistakes-value'),
           ),
           stat('Hints', '$hints', valueKey: const Key('hints-value')),
-          ValueListenableBuilder<int>(
-            valueListenable: seconds,
-            builder: (context, value, _) => stat(
-              'Time',
-              formatClock(value),
-              valueKey: const Key('time-value'),
+          if (showClock)
+            ValueListenableBuilder<int>(
+              valueListenable: seconds,
+              builder: (context, value, _) => stat(
+                'Time',
+                formatClock(value),
+                valueKey: const Key('time-value'),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -792,7 +808,8 @@ class _NumberPad extends StatelessWidget {
                     onLongPress: done
                         ? null
                         : () {
-                            HapticFeedback.selectionClick();
+                            SettingsScope.read(context)
+                                .haptic(HapticFeedback.selectionClick);
                             controller.toggleArmed(digit);
                           },
                     child: Container(
