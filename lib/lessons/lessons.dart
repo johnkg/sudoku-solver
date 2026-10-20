@@ -44,7 +44,7 @@ class Lesson {
 
 /// An empty board where [allowed] limits the candidates of the listed cells.
 Board _candidates(Map<int, List<int>> allowed) {
-  final board = Board.parse('.' * 81);
+  final board = Board.parse('.' * Board.cellCount);
   allowed.forEach((cell, digits) {
     board.candidates[cell] = digits.fold(0, (m, d) => m | digitBit(d));
   });
@@ -52,12 +52,29 @@ Board _candidates(Map<int, List<int>> allowed) {
 }
 
 Board _givens(Map<int, int> cells) {
-  final chars = List.filled(81, '.');
+  final chars = List.filled(Board.cellCount, '.');
   cells.forEach((cell, digit) => chars[cell] = '$digit');
   return Board.parse(chars.join());
 }
 
+/// Every digit but 1.
 const _noOne = [2, 3, 4, 5, 6, 7, 8, 9];
+
+/// The cell at [row] and [column], counted from 1 as in `r2c6`.
+int _rc(int row, int column) => Board.cellAt(row - 1, column - 1);
+
+/// Rules 1 out of [row] everywhere except the columns in [keep], so 1 can
+/// only go there.
+Map<int, List<int>> _noOneInRowExcept(int row, Set<int> keep) => {
+  for (var column = 1; column <= Board.size; column++)
+    if (!keep.contains(column)) _rc(row, column): _noOne,
+};
+
+/// Rules 1 out of [column] everywhere except the rows in [keep].
+Map<int, List<int>> _noOneInColumnExcept(int column, Set<int> keep) => {
+  for (var row = 1; row <= Board.size; row++)
+    if (!keep.contains(row)) _rc(row, column): _noOne,
+};
 
 /// All lessons, easiest first.
 final List<Lesson> lessons = [
@@ -71,7 +88,10 @@ final List<Lesson> lessons = [
     spot:
         'Scan the rows, columns and boxes for ones that are almost full. '
         'Count the filled cells: eight means a full house.',
-    buildExample: () => _givens({for (var c = 0; c < 8; c++) c: c + 1}),
+    buildExample: () => _givens({
+      for (var column = 1; column < Board.size; column++)
+        _rc(1, column): column,
+    }),
   ),
   Lesson(
     technique: Technique.nakedSingle,
@@ -85,8 +105,8 @@ final List<Lesson> lessons = [
         'already use. With pencil marks, look for a cell showing just one '
         'candidate.',
     buildExample: () => _givens({
-      4: 5, 13: 6, 22: 7, 31: 8, // column 5
-      36: 1, 37: 2, 38: 3, 39: 4, // row 5
+      _rc(1, 5): 5, _rc(2, 5): 6, _rc(3, 5): 7, _rc(4, 5): 8, // column 5
+      _rc(5, 1): 1, _rc(5, 2): 2, _rc(5, 3): 3, _rc(5, 4): 4, // row 5
     }),
   ),
   Lesson(
@@ -100,7 +120,8 @@ final List<Lesson> lessons = [
         'Pick a digit and a unit, then look at where the digit is still '
         'allowed. Digits already placed in crossing rows and columns often '
         'leave just one cell.',
-    buildExample: () => _givens({14: 5, 26: 5, 27: 5, 55: 5}),
+    buildExample: () =>
+        _givens({_rc(2, 6): 5, _rc(3, 9): 5, _rc(4, 1): 5, _rc(7, 2): 5}),
   ),
   Lesson(
     technique: Technique.pointingPair,
@@ -112,7 +133,10 @@ final List<Lesson> lessons = [
     spot:
         'Look at a box and one digit. If its two or three candidate cells '
         'line up, remove that digit from the rest of that row or column.',
-    buildExample: () => _givens({9: 1, 10: 2, 11: 3, 18: 4, 19: 6, 20: 7}),
+    buildExample: () => _givens({
+      _rc(2, 1): 1, _rc(2, 2): 2, _rc(2, 3): 3, //
+      _rc(3, 1): 4, _rc(3, 2): 6, _rc(3, 3): 7,
+    }),
   ),
   Lesson(
     technique: Technique.boxLineReduction,
@@ -126,7 +150,8 @@ final List<Lesson> lessons = [
         'Look at a row or column and one digit. If all its candidates fall '
         'within one box, clear the digit from the rest of that box.',
     buildExample: () => _givens({
-      3: 1, 4: 2, 5: 3, 6: 4, 7: 6, 8: 7, // the rest of row 1
+      _rc(1, 4): 1, _rc(1, 5): 2, _rc(1, 6): 3, // the rest of row 1
+      _rc(1, 7): 4, _rc(1, 8): 6, _rc(1, 9): 7,
     }),
   ),
   Lesson(
@@ -140,8 +165,8 @@ final List<Lesson> lessons = [
         'Look for two cells in one row, column or box showing identical '
         'two-digit pencil marks.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      1: [1, 2],
+      _rc(1, 1): [1, 2],
+      _rc(1, 2): [1, 2],
     }),
   ),
   Lesson(
@@ -155,7 +180,8 @@ final List<Lesson> lessons = [
         'Look for two digits that appear in exactly two cells of a row, '
         'column or box, and in the same two cells.',
     buildExample: () => _candidates({
-      for (var c = 2; c < 9; c++) c: [3, 4, 5, 6, 7, 8, 9],
+      for (var column = 3; column <= Board.size; column++)
+        _rc(1, column): [3, 4, 5, 6, 7, 8, 9],
     }),
   ),
   Lesson(
@@ -169,9 +195,9 @@ final List<Lesson> lessons = [
         'Look for three cells whose pencil marks, put together, make just '
         'three digits, such as 12, 23 and 13.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      1: [2, 3],
-      2: [1, 3],
+      _rc(1, 1): [1, 2],
+      _rc(1, 2): [2, 3],
+      _rc(1, 3): [1, 3],
     }),
   ),
   Lesson(
@@ -185,7 +211,8 @@ final List<Lesson> lessons = [
         'Look for three digits that, in a row, column or box, are confined '
         'to the same three cells.',
     buildExample: () => _candidates({
-      for (var c = 3; c < 9; c++) c: [4, 5, 6, 7, 8, 9],
+      for (var column = 4; column <= Board.size; column++)
+        _rc(1, column): [4, 5, 6, 7, 8, 9],
     }),
   ),
   Lesson(
@@ -201,9 +228,8 @@ final List<Lesson> lessons = [
         'Pick a digit and look for two rows where it has exactly two '
         'candidates, lined up in the same columns.',
     buildExample: () => _candidates({
-      for (final r in [0, 4])
-        for (var c = 0; c < 9; c++)
-          if (c != 2 && c != 6) r * 9 + c: _noOne,
+      ..._noOneInRowExcept(1, {3, 7}),
+      ..._noOneInRowExcept(5, {3, 7}),
     }),
   ),
   Lesson(
@@ -220,10 +246,8 @@ final List<Lesson> lessons = [
         'one pair of cells in the same column and the other two cells in '
         'different columns.',
     buildExample: () => _candidates({
-      for (var c = 0; c < 9; c++)
-        if (c != 2 && c != 5) c: _noOne,
-      for (var c = 0; c < 9; c++)
-        if (c != 2 && c != 3) 36 + c: _noOne,
+      ..._noOneInRowExcept(1, {3, 6}),
+      ..._noOneInRowExcept(5, {3, 4}),
     }),
   ),
   Lesson(
@@ -238,9 +262,9 @@ final List<Lesson> lessons = [
         'Look for three two-candidate cells forming a chain AB, AC, BC, '
         'where the AB cell sees both of the others.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      1: [1, 3],
-      9: [2, 3],
+      _rc(1, 1): [1, 2],
+      _rc(1, 2): [1, 3],
+      _rc(2, 1): [2, 3],
     }),
   ),
   Lesson(
@@ -254,18 +278,11 @@ final List<Lesson> lessons = [
     spot:
         'Pick a digit and find three rows whose candidates for it sit in a '
         'total of only three columns.',
-    buildExample: () {
-      const allowed = {
-        0: [2, 5],
-        3: [5, 8],
-        6: [2, 8],
-      };
-      return _candidates({
-        for (final entry in allowed.entries)
-          for (var c = 0; c < 9; c++)
-            if (!entry.value.contains(c + 1)) entry.key * 9 + c: _noOne,
-      });
-    },
+    buildExample: () => _candidates({
+      ..._noOneInRowExcept(1, {2, 5}),
+      ..._noOneInRowExcept(4, {5, 8}),
+      ..._noOneInRowExcept(7, {2, 8}),
+    }),
   ),
   Lesson(
     technique: Technique.nakedQuad,
@@ -278,10 +295,10 @@ final List<Lesson> lessons = [
         'Look for four cells whose pencil marks together use only four '
         'digits. It is rare and easier to find with a pencil mark list.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      1: [2, 3],
-      2: [3, 4],
-      3: [4, 1],
+      _rc(1, 1): [1, 2],
+      _rc(1, 2): [2, 3],
+      _rc(1, 3): [3, 4],
+      _rc(1, 4): [4, 1],
     }),
   ),
   Lesson(
@@ -295,7 +312,8 @@ final List<Lesson> lessons = [
         'Look for four digits confined to the same four cells of a row, '
         'column or box.',
     buildExample: () => _candidates({
-      for (var c = 4; c < 9; c++) c: [5, 6, 7, 8, 9],
+      for (var column = 5; column <= Board.size; column++)
+        _rc(1, column): [5, 6, 7, 8, 9],
     }),
   ),
   Lesson(
@@ -310,9 +328,9 @@ final List<Lesson> lessons = [
         'Find a three-candidate cell that sees two two-candidate cells '
         'whose digits are two of its three, sharing one digit.',
     buildExample: () => _candidates({
-      0: [1, 2, 3],
-      1: [1, 3],
-      9: [2, 3],
+      _rc(1, 1): [1, 2, 3],
+      _rc(1, 2): [1, 3],
+      _rc(2, 1): [2, 3],
     }),
   ),
   Lesson(
@@ -328,10 +346,10 @@ final List<Lesson> lessons = [
         'boxes, where three show the same two candidates. Only use this '
         'when the puzzle is known to have one solution.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      3: [1, 2],
-      9: [1, 2],
-      12: [1, 2, 3],
+      _rc(1, 1): [1, 2],
+      _rc(1, 4): [1, 2],
+      _rc(2, 1): [1, 2],
+      _rc(2, 4): [1, 2, 3],
     }),
   ),
   Lesson(
@@ -348,10 +366,9 @@ final List<Lesson> lessons = [
         'where one of those digits has exactly two places, each pointing at '
         'one of the cells.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      38: [1, 2],
-      for (var r = 0; r < 9; r++)
-        if (r != 0 && r != 4) r * 9 + 8: _noOne,
+      _rc(1, 1): [1, 2],
+      _rc(5, 3): [1, 2],
+      ..._noOneInColumnExcept(9, {1, 5}),
     }),
   ),
   Lesson(
@@ -367,10 +384,8 @@ final List<Lesson> lessons = [
         'Pick a digit and mark every pair that are its only two places in a '
         'unit. Join pairs that share a cell, then colour them alternately.',
     buildExample: () => _candidates({
-      for (var c = 0; c < 9; c++)
-        if (c != 0 && c != 4) c: _noOne,
-      for (var r = 0; r < 9; r++)
-        if (r != 0 && r != 2) r * 9 + 4: _noOne,
+      ..._noOneInRowExcept(1, {1, 5}),
+      ..._noOneInColumnExcept(5, {1, 3}),
     }),
   ),
   Lesson(
@@ -384,19 +399,12 @@ final List<Lesson> lessons = [
     spot:
         'Pick a digit and find four rows whose candidates for it sit in a '
         'total of only four columns. It is rare.',
-    buildExample: () {
-      const allowed = {
-        0: [1, 3],
-        2: [3, 5],
-        4: [5, 7],
-        6: [7, 1],
-      };
-      return _candidates({
-        for (final entry in allowed.entries)
-          for (var c = 0; c < 9; c++)
-            if (!entry.value.contains(c)) entry.key * 9 + c: _noOne,
-      });
-    },
+    buildExample: () => _candidates({
+      ..._noOneInRowExcept(1, {2, 4}),
+      ..._noOneInRowExcept(3, {4, 6}),
+      ..._noOneInRowExcept(5, {6, 8}),
+      ..._noOneInRowExcept(7, {8, 2}),
+    }),
   ),
   Lesson(
     technique: Technique.xChain,
@@ -415,12 +423,9 @@ final List<Lesson> lessons = [
         'sees the next pair. When the two ends of such a chain both see a '
         'cell, remove the digit from it.',
     buildExample: () => _candidates({
-      for (var c = 0; c < 9; c++)
-        if (c != 1 && c != 5) c: _noOne,
-      for (var c = 0; c < 9; c++)
-        if (c != 5 && c != 7) 18 + c: _noOne,
-      for (var c = 0; c < 9; c++)
-        if (c != 7 && c != 2) 36 + c: _noOne,
+      ..._noOneInRowExcept(1, {2, 6}),
+      ..._noOneInRowExcept(3, {6, 8}),
+      ..._noOneInRowExcept(5, {8, 3}),
     }),
   ),
   Lesson(
@@ -438,10 +443,10 @@ final List<Lesson> lessons = [
         'digit X, and walk to a neighbour that has the other digit, then on '
         'to its other digit, until a cell holds X again.',
     buildExample: () => _candidates({
-      0: [1, 2],
-      4: [2, 3],
-      40: [3, 4],
-      36: [4, 1],
+      _rc(1, 1): [1, 2],
+      _rc(1, 5): [2, 3],
+      _rc(5, 5): [3, 4],
+      _rc(5, 1): [4, 1],
     }),
   ),
 ];

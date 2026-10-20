@@ -20,8 +20,8 @@ Board generateSolution(Random random) {
   Board? fill(Board board) {
     if (board.hasContradiction) return null;
     var best = -1;
-    var bestCount = 10;
-    for (var cell = 0; cell < 81; cell++) {
+    var bestCount = maxDigit + 1; // more than any cell can have
+    for (var cell = 0; cell < Board.cellCount; cell++) {
       if (board.values[cell] != 0) continue;
       final n = popCount(board.candidates[cell]);
       if (n < bestCount) {
@@ -39,7 +39,7 @@ Board generateSolution(Random random) {
     return null;
   }
 
-  return fill(Board.parse('.' * 81))!;
+  return fill(Board.parse('.' * Board.cellCount))!;
 }
 
 /// A random puzzle with exactly one solution.
@@ -50,9 +50,9 @@ Board generateSolution(Random random) {
 /// default of 0 it removes every clue it can.
 Board generatePuzzle(Random random, {int minClues = 0}) {
   final cells = generateSolution(random).toLine().split('');
-  final order = List.generate(81, (i) => i);
+  final order = List.generate(Board.cellCount, (i) => i);
   _shuffle(order, random);
-  var clues = 81;
+  var clues = Board.cellCount;
   for (final cell in order) {
     if (clues <= minClues) break;
     final saved = cells[cell];

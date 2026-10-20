@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../settings/settings.dart';
+import 'layout.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -14,7 +15,7 @@ class SettingsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Settings')),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: const BoxConstraints(maxWidth: contentMaxWidth),
           child: ListView(
             padding: const EdgeInsets.symmetric(vertical: 8),
             children: [

@@ -14,7 +14,7 @@ class HiddenSingle extends SolvingTechnique {
   @override
   Step? find(Board board) {
     for (final unit in Board.units) {
-      for (var digit = 1; digit <= 9; digit++) {
+      for (var digit = 1; digit <= maxDigit; digit++) {
         final spots = unit.cells
             .where(
               (c) =>

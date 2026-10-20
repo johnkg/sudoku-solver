@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' hide Step;
 import '../engine/engine.dart';
 import '../lessons/lessons.dart';
 import 'board_view.dart';
+import 'layout.dart';
 import 'levels.dart';
 import 'link_legend.dart';
 import 'puzzle_library.dart';
@@ -67,7 +68,7 @@ class _LessonScreenState extends State<LessonScreen> {
         BoardView(
           board: view == _View.before ? before : after,
           givens: {
-            for (var i = 0; i < 81; i++)
+            for (var i = 0; i < Board.cellCount; i++)
               if (before.values[i] != 0) i,
           },
           showCandidates: true,
@@ -154,19 +155,19 @@ class _LessonScreenState extends State<LessonScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth >= 840) {
+            if (constraints.maxWidth >= wideLayoutMinWidth) {
               return Padding(
                 padding: const EdgeInsets.all(24),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      flex: 3,
+                      flex: boardFlex,
                       child: SingleChildScrollView(child: example),
                     ),
                     const SizedBox(width: 24),
                     Expanded(
-                      flex: 2,
+                      flex: panelFlex,
                       child: SingleChildScrollView(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,

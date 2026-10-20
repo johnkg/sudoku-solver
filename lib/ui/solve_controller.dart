@@ -20,7 +20,7 @@ class SolveController extends ChangeNotifier {
     : _board = _start.copy(),
       solution = solveByBacktracking(_start)!,
       givens = {
-        for (var i = 0; i < 81; i++)
+        for (var i = 0; i < Board.cellCount; i++)
           if (_start.values[i] != 0) i,
       };
 
@@ -42,9 +42,15 @@ class SolveController extends ChangeNotifier {
   /// The player's own notes: a bit mask of digits per cell, empty at the
   /// start. They are separate from the board's candidates, which the solver
   /// and hints work from.
-  List<int> marks = List.filled(81, 0);
+  List<int> marks = List.filled(Board.cellCount, 0);
 
   Step? _pending;
+
+  /// Stages of the hint ladder: where to look, which technique, the move.
+  static const hintNudge = 1;
+  static const hintTechnique = 2;
+  static const hintMove = 3;
+
   int _hintLevel = 0;
   bool _stuck = false;
   bool showCandidates = true;
@@ -96,8 +102,8 @@ class SolveController extends ChangeNotifier {
     final step = _pending;
     if (step == null) return null;
     return switch (_hintLevel) {
-      1 => nudgeView(step),
-      2 => patternView(step),
+      hintNudge => nudgeView(step),
+      hintTechnique => patternView(step),
       _ => step,
     };
   }
@@ -127,7 +133,7 @@ class SolveController extends ChangeNotifier {
     if (solved) return;
     _pending = _solver.nextStep(_board);
     _stuck = _pending == null;
-    _hintLevel = _pending == null ? 0 : 1;
+    _hintLevel = _pending == null ? 0 : hintNudge;
     if (_pending != null) hintsUsed++;
     _clearMessage();
     notifyListeners();
@@ -142,16 +148,16 @@ class SolveController extends ChangeNotifier {
 
   /// Goes one stage up the hint ladder.
   void moreHelp() {
-    if (_pending == null || _hintLevel >= 3) return;
+    if (_pending == null || _hintLevel >= hintMove) return;
     _hintLevel++;
-    if (_hintLevel == 3) movesShown++;
+    if (_hintLevel == hintMove) movesShown++;
     notifyListeners();
   }
 
   /// Jumps straight to the full move.
   void showMove() {
-    if (_pending == null || _hintLevel >= 3) return;
-    _hintLevel = 3;
+    if (_pending == null || _hintLevel >= hintMove) return;
+    _hintLevel = hintMove;
     movesShown++;
     notifyListeners();
   }
@@ -189,7 +195,7 @@ class SolveController extends ChangeNotifier {
     select(cell);
     final digit = armed;
     if (digit == null || _board.values[cell] != 0) return;
-    if (_board.values.where((v) => v == digit).length >= 9) {
+    if (_board.values.where((v) => v == digit).length >= Board.size) {
       armed = null;
       notifyListeners();
       return;
@@ -212,10 +218,13 @@ class SolveController extends ChangeNotifier {
 
   /// Moves the selection by whole cells, staying on the board.
   void moveSelection(int rowDelta, int columnDelta) {
-    final current = selected ?? 40;
-    final row = (Board.rowOf(current) + rowDelta).clamp(0, 8);
-    final column = (Board.columnOf(current) + columnDelta).clamp(0, 8);
-    select(row * 9 + column);
+    final current = selected ?? Board.cellCount ~/ 2; // the centre cell
+    final row = (Board.rowOf(current) + rowDelta).clamp(0, Board.size - 1);
+    final column = (Board.columnOf(current) + columnDelta).clamp(
+      0,
+      Board.size - 1,
+    );
+    select(Board.cellAt(row, column));
   }
 
   void setMode(EntryMode value) {
@@ -260,7 +269,7 @@ class SolveController extends ChangeNotifier {
 
   /// The notes every empty cell would have if filled in automatically.
   List<int> get _allNotes => [
-    for (var c = 0; c < 81; c++)
+    for (var c = 0; c < Board.cellCount; c++)
       _board.values[c] == 0 ? _board.candidates[c] : 0,
   ];
 
@@ -271,7 +280,7 @@ class SolveController extends ChangeNotifier {
   /// already filled in. Either can be undone.
   void toggleAutoNotes() {
     _push(null, note: true);
-    marks = notesFilled ? List.filled(81, 0) : _allNotes;
+    marks = notesFilled ? List.filled(Board.cellCount, 0) : _allNotes;
     _clearMessage();
     notifyListeners();
   }
@@ -359,7 +368,7 @@ class SolveController extends ChangeNotifier {
 
   void restart() {
     _board = _start.copy();
-    marks = List.filled(81, 0);
+    marks = List.filled(Board.cellCount, 0);
     seconds.value = 0;
     paused = false;
     armed = null;
@@ -429,9 +438,10 @@ class SolveController extends ChangeNotifier {
 
   /// Notes saved before notes existed are empty.
   static List<int> _decodeMarks(Object? data) {
-    if (data == null) return List.filled(81, 0);
+    if (data == null) return List.filled(Board.cellCount, 0);
     final list = (data as List<Object?>).cast<int>();
-    if (list.length != 81 || list.any((m) => m < 0 || m > allDigitsMask)) {
+    if (list.length != Board.cellCount ||
+        list.any((m) => m < 0 || m > allDigitsMask)) {
       throw const FormatException('Bad notes');
     }
     return List.of(list);
@@ -449,7 +459,7 @@ class SolveController extends ChangeNotifier {
       (map['values']! as List<Object?>).cast<int>(),
       (map['candidates']! as List<Object?>).cast<int>(),
     );
-    for (var i = 0; i < 81; i++) {
+    for (var i = 0; i < Board.cellCount; i++) {
       final value = board.values[i];
       if (givens.contains(i) && value != _start.values[i]) {
         throw const FormatException('Saved board changes a given');

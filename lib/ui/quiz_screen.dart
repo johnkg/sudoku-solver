@@ -5,6 +5,7 @@ import 'dart:math';
 import '../engine/engine.dart';
 import '../progress/progress_scope.dart';
 import 'board_view.dart';
+import 'layout.dart';
 import 'quiz.dart';
 import 'search_dialog.dart';
 
@@ -67,7 +68,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<List<QuizQuestion>?> _generate(bool Function() isCancelled) async {
     final random = Random();
     final found = <QuizQuestion>[];
-    for (var i = 0; i < 5; i++) {
+    for (var i = 0; i < questionsPerRound; i++) {
       final moment = await findMomentOf(
         widget.technique,
         random,
@@ -146,7 +147,7 @@ class _QuizScreenState extends State<QuizScreen> {
           BoardView(
             board: q.board,
             givens: {
-              for (var i = 0; i < 81; i++)
+              for (var i = 0; i < Board.cellCount; i++)
                 if (q.board.values[i] != 0) i,
             },
             showCandidates: true,
@@ -192,7 +193,7 @@ class _QuizScreenState extends State<QuizScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 560),
+            constraints: const BoxConstraints(maxWidth: boardScreenMaxWidth),
             child: body,
           ),
         ),

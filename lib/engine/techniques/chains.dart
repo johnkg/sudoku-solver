@@ -19,7 +19,9 @@ import 'technique.dart';
 class XChain extends SolvingTechnique {
   const XChain();
 
-  /// Most strong links in a chain. More is rarely worth the search.
+  /// Fewest and most strong links in a chain. More is rarely worth the
+  /// search.
+  static const minStrong = 2;
   static const maxStrong = 4;
 
   @override
@@ -27,16 +29,16 @@ class XChain extends SolvingTechnique {
 
   @override
   Step? find(Board board) {
-    for (var digit = 1; digit <= 9; digit++) {
+    for (var digit = 1; digit <= maxDigit; digit++) {
       final strong = <int, List<int>>{};
       for (final (a, b) in strongLinks(board, digit)) {
         (strong[a] ??= []).add(b);
         (strong[b] ??= []).add(a);
       }
-      if (strong.length < 4) continue;
+      if (strong.length < 2 * minStrong) continue;
 
       final spots = {
-        for (var c = 0; c < 81; c++)
+        for (var c = 0; c < Board.cellCount; c++)
           if (board.values[c] == 0 && hasDigit(board.candidates[c], digit)) c,
       };
       for (final start in strong.keys) {
@@ -62,7 +64,7 @@ class XChain extends SolvingTechnique {
     final first = path.first;
     final last = path.last;
 
-    if (strongCount >= 2) {
+    if (strongCount >= minStrong) {
       final eliminations = [
         for (final cell in Board.peers[first])
           if (spots.contains(cell) &&
@@ -130,6 +132,8 @@ class XChain extends SolvingTechnique {
 class XYChain extends SolvingTechnique {
   const XYChain();
 
+  /// Shortest and longest chains. Three cells is a Y-Wing, found earlier.
+  static const minLength = 4;
   static const maxLength = 8;
 
   @override
@@ -138,10 +142,11 @@ class XYChain extends SolvingTechnique {
   @override
   Step? find(Board board) {
     final bivalue = [
-      for (var c = 0; c < 81; c++)
-        if (board.values[c] == 0 && popCount(board.candidates[c]) == 2) c,
+      for (var c = 0; c < Board.cellCount; c++)
+        if (board.values[c] == 0 && popCount(board.candidates[c]) == pairSize)
+          c,
     ];
-    if (bivalue.length < 4) return null;
+    if (bivalue.length < minLength) return null;
     final isBivalue = bivalue.toSet();
 
     for (final start in bivalue) {
@@ -173,7 +178,7 @@ class XYChain extends SolvingTechnique {
       final nextOut = digitsOf(board.candidates[next] & ~digitBit(out)).single;
       final longer = [...chain, next];
 
-      if (nextOut == x && longer.length >= 4) {
+      if (nextOut == x && longer.length >= minLength) {
         final first = longer.first;
         final eliminations = [
           for (final cell in Board.peers[first])

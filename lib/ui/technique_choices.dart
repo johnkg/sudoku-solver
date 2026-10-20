@@ -3,7 +3,10 @@ import '../engine/engine.dart';
 /// Techniques that remove candidates rather than place a digit.
 bool removesCandidates(Technique t) => t.index >= Technique.pointingPair.index;
 
-/// Four techniques to pick from for a question about [board], one of which is
+/// Wrong answers offered next to the right one.
+const _wrongChoices = 3;
+
+/// Techniques to pick from for a question about [board], one of which is
 /// [correct]. The others are candidate-removing techniques that find nothing
 /// on [board], so exactly the right answers are right. In enum order.
 List<Technique> techniqueChoices(Board board, Technique correct) {
@@ -22,6 +25,6 @@ List<Technique> techniqueChoices(Board board, Technique correct) {
             (b.level - correct.level).abs(),
           ),
         );
-  return [correct, ...others.take(3)]
+  return [correct, ...others.take(_wrongChoices)]
     ..sort((a, b) => a.index.compareTo(b.index));
 }

@@ -17,8 +17,12 @@ class FoundPuzzle {
   final PuzzleRating rating;
 }
 
+/// How many puzzles a search tries before giving up.
+const defaultMaxAttempts = 3000;
+
 /// Clue floors worth trying for [level]. Puzzles with more clues tend to be
-/// easier, so low levels start from fuller grids.
+/// easier, so low levels start from fuller grids. A floor of 0 removes every
+/// clue it can.
 List<int> clueFloorsFor(int level) => switch (level) {
   1 => const [40, 46, 52, 58],
   2 => const [34, 38, 42],
@@ -37,7 +41,7 @@ List<int> clueFloorsFor(int level) => switch (level) {
 Future<FoundPuzzle?> findPuzzleOfLevel(
   int level,
   Random random, {
-  int maxAttempts = 3000,
+  int maxAttempts = defaultMaxAttempts,
   List<SolvingTechnique> techniques = defaultTechniques,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
@@ -58,6 +62,14 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
   return null;
 }
 
+/// Tries spent looking for a puzzle that needs a technique before one that
+/// only uses it will do.
+const defaultPreferAttempts = 80;
+
+/// Floors added to a technique's own, since a hard technique can turn up in a
+/// fuller grid and an easy one in a sparse grid.
+const _extraFloors = [0, 28, 36];
+
 /// Generates random puzzles until one is built around [technique]. A puzzle
 /// that cannot be solved without it (see [ratePuzzle]) is best; harder
 /// techniques are rarely strictly needed, so after [preferAttempts] tries a
@@ -67,12 +79,12 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
 Future<FoundPuzzle?> findPuzzleRequiring(
   Technique technique,
   Random random, {
-  int maxAttempts = 3000,
-  int preferAttempts = 80,
+  int maxAttempts = defaultMaxAttempts,
+  int preferAttempts = defaultPreferAttempts,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
 }) async {
-  final floors = [...clueFloorsFor(technique.level), 0, 28, 36];
+  final floors = [...clueFloorsFor(technique.level), ..._extraFloors];
   FoundPuzzle? uses;
   for (var attempt = 0; attempt < maxAttempts; attempt++) {
     if (isCancelled?.call() ?? false) return null;
@@ -102,20 +114,23 @@ class TechniqueMoment {
   final Step step;
 }
 
+/// Clue floors for [findMomentOf]. Harder techniques turn up in sparse
+/// puzzles, but easier ones such as pointing pairs are crowded out there by
+/// singles, so mix both.
+const _momentClueFloors = [0, 0, 24, 30, 36, 42];
+
 /// Generates random puzzles and solves them like a human until the solver
 /// reaches a use of [technique], and returns that moment. Returns null after
 /// [maxAttempts] puzzles or once [isCancelled] says to stop.
 Future<TechniqueMoment?> findMomentOf(
   Technique technique,
   Random random, {
-  int maxAttempts = 3000,
+  int maxAttempts = defaultMaxAttempts,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
 }) async {
   const solver = Solver();
-  // Harder techniques turn up in sparse puzzles, but easier ones such as
-  // pointing pairs are crowded out there by singles, so mix both.
-  const floors = [0, 0, 24, 30, 36, 42];
+  const floors = _momentClueFloors;
   for (var attempt = 0; attempt < maxAttempts; attempt++) {
     if (isCancelled?.call() ?? false) return null;
 

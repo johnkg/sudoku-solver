@@ -9,16 +9,16 @@ import 'technique.dart';
 /// The digit must then sit at the crossings, so it can be removed from the
 /// rest of the cover lines.
 ///
-/// Size 2 is an X-Wing, 3 a Swordfish, 4 a Jellyfish.
+/// A pair of lines is an X-Wing, a triple a Swordfish, a quad a Jellyfish.
 class Fish extends SolvingTechnique {
-  const Fish(this.size) : assert(size >= 2 && size <= 4);
+  const Fish(this.size) : assert(size >= pairSize && size <= quadSize);
 
   final int size;
 
   @override
   Technique get technique => switch (size) {
-    2 => Technique.xWing,
-    3 => Technique.swordfish,
+    pairSize => Technique.xWing,
+    tripleSize => Technique.swordfish,
     _ => Technique.jellyfish,
   };
 
@@ -26,7 +26,7 @@ class Fish extends SolvingTechnique {
 
   @override
   Step? find(Board board) {
-    for (var digit = 1; digit <= 9; digit++) {
+    for (var digit = 1; digit <= maxDigit; digit++) {
       for (final rowsAreBase in const [true, false]) {
         final step = _findFor(board, digit, rowsAreBase);
         if (step != null) return step;
@@ -45,13 +45,13 @@ class Fish extends SolvingTechnique {
 
     // Base lines where the digit has 2..size spots, with their cover indexes.
     final spots = <int, List<int>>{};
-    for (var i = 0; i < 9; i++) {
-      final line = Board.units[(rowsAreBase ? 0 : 9) + i];
+    for (var i = 0; i < Board.size; i++) {
+      final line = rowsAreBase ? Board.row(i) : Board.column(i);
       final cells = [
         for (final c in line.cells)
           if (board.values[c] == 0 && hasDigit(board.candidates[c], digit)) c,
       ];
-      if (cells.length >= 2 && cells.length <= size) spots[i] = cells;
+      if (cells.length >= pairSize && cells.length <= size) spots[i] = cells;
     }
 
     for (final bases in combinations(spots.keys.toList(), size)) {
@@ -62,7 +62,8 @@ class Fish extends SolvingTechnique {
 
       final eliminations = [
         for (final cover in covers)
-          for (final c in Board.units[(rowsAreBase ? 9 : 0) + cover].cells)
+          for (final c
+              in (rowsAreBase ? Board.column(cover) : Board.row(cover)).cells)
             if (board.values[c] == 0 &&
                 hasDigit(board.candidates[c], digit) &&
                 !bases.contains(baseIndex(c)))
@@ -79,7 +80,7 @@ class Fish extends SolvingTechnique {
         highlightDigits: [digit],
         links: [
           for (final b in bases)
-            if (spots[b]!.length == 2)
+            if (spots[b]!.length == pairSize)
               ChainLink(spots[b]![0], spots[b]![1], digit, strong: true),
         ],
         explanation:

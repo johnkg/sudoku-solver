@@ -1,13 +1,22 @@
 import '../engine/engine.dart';
 import '../progress/progress_store.dart';
 
+/// Tries needed before a technique can count as a weak spot.
+const weakSpotMinAttempts = 3;
+
+/// A technique got right less often than this is a weak spot.
+const weakSpotMaxAccuracy = 0.7;
+
+/// Most weak spots shown at once.
+const weakSpotLimit = 3;
+
 /// Techniques the player keeps missing, worst first: at least [minAttempts]
 /// tries and under [maxAccuracy] right. At most [limit] are returned.
 List<Technique> weakSpots(
   ProgressStore store, {
-  int minAttempts = 3,
-  double maxAccuracy = 0.7,
-  int limit = 3,
+  int minAttempts = weakSpotMinAttempts,
+  double maxAccuracy = weakSpotMaxAccuracy,
+  int limit = weakSpotLimit,
 }) {
   final stats = store.techniqueStats;
   final weak = [

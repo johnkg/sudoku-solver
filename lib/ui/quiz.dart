@@ -18,9 +18,19 @@ class QuizQuestion {
       : step.highlightCells.toSet();
 }
 
+/// Questions in one round of a quiz.
+const questionsPerRound = 5;
+
+/// A round with fewer library questions than this also gets the lesson's own
+/// example.
+const _minLibraryQuestions = 3;
+
 /// Up to [max] questions about [technique]: the first moment each library
 /// puzzle needs it, then the lesson's own example if there are too few.
-List<QuizQuestion> quizQuestions(Technique technique, {int max = 5}) {
+List<QuizQuestion> quizQuestions(
+  Technique technique, {
+  int max = questionsPerRound,
+}) {
   const solver = Solver();
   final questions = <QuizQuestion>[];
 
@@ -40,7 +50,7 @@ List<QuizQuestion> quizQuestions(Technique technique, {int max = 5}) {
     }
   }
 
-  if (questions.length < 3) {
+  if (questions.length < _minLibraryQuestions) {
     final example = lessonFor(technique).example();
     questions.add(QuizQuestion(example.board, example.step));
   }

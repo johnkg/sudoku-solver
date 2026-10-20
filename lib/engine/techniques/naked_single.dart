@@ -12,7 +12,7 @@ class NakedSingle extends SolvingTechnique {
 
   @override
   Step? find(Board board) {
-    for (var cell = 0; cell < 81; cell++) {
+    for (var cell = 0; cell < Board.cellCount; cell++) {
       if (board.values[cell] != 0 || popCount(board.candidates[cell]) != 1) {
         continue;
       }

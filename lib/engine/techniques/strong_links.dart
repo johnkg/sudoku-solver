@@ -1,5 +1,6 @@
 import '../bits.dart';
 import '../board.dart';
+import 'subsets.dart';
 
 /// Every strong link for [digit]: a pair of cells that are the only two places
 /// the digit can go in some row, column, or box. Exactly one of the two holds
@@ -12,7 +13,8 @@ List<(int, int)> strongLinks(Board board, int digit) {
       for (final c in unit.cells)
         if (board.values[c] == 0 && hasDigit(board.candidates[c], digit)) c,
     ];
-    if (spots.length == 2 && seen.add(spots[0] * 81 + spots[1])) {
+    if (spots.length == pairSize &&
+        seen.add(spots[0] * Board.cellCount + spots[1])) {
       links.add((spots[0], spots[1]));
     }
   }

@@ -12,9 +12,62 @@
   'use strict';
 
   var BASE = new URL('scan/', document.baseURI).href;
+  // Photos are scaled down so their longer side is at most this many pixels.
   var MAX_SIDE = 1200;
+
+  // The grid, and the size of each cell once the grid is flattened.
+  var GRID = 9;
+  var CELLS = GRID * GRID;
   var CELL = 80;
-  var SIZE = CELL * 9;
+  var SIZE = CELL * GRID;
+
+  // Greyscale from colour: ITU-R BT.601 luma weights.
+  var LUMA_RED = 0.299;
+  var LUMA_GREEN = 0.587;
+  var LUMA_BLUE = 0.114;
+  var CHANNELS = 4; // red, green, blue, alpha
+  var ALPHA = 3; // where alpha sits among them
+  var WHITE = 255;
+
+  // Finding the grid in the whole photo. Ink is a pixel darker than
+  // COARSE_RATIO times its neighbourhood's average, over a window of a
+  // twelfth of the shorter side.
+  var COARSE_WINDOW_DIVISOR = 12;
+  var COARSE_MIN_WINDOW = 15;
+  var COARSE_RATIO = 0.85;
+  // The grid's outline must be roughly square and fill a fair share of the
+  // photo.
+  var GRID_MIN_ASPECT = 0.6;
+  var GRID_MAX_ASPECT = 1.6;
+  var GRID_MIN_SHARE = 0.25;
+
+  // A homography has eight unknowns: the 3x3 matrix with its last entry 1.
+  var UNKNOWNS = 8;
+
+  // Reading the flattened grid.
+  var FLAT_WINDOW = 51;
+  var FLAT_RATIO = 0.82;
+  // Pixels trimmed from each side of a cell to drop its grid lines.
+  var CELL_MARGIN = 6;
+  // Smaller ink blobs are specks; a cell needs this much ink, this tall a
+  // share of the cell, to hold a digit.
+  var MIN_BLOB = 10;
+  var MIN_INK = 40;
+  var MIN_DIGIT_HEIGHT = 0.3;
+  // A digit is redrawn this tall, centred on a square canvas, for OCR.
+  var OCR_DIGIT_HEIGHT = 48;
+  var OCR_CANVAS = 96;
+
+  // Tesseract settings. Page segmentation modes: one word, one character,
+  // one line. Each digit is read in all three, in that order.
+  var DIGITS = '123456789';
+  var PSM_WORD = '8';
+  var PSM_CHAR = '10';
+  var PSM_LINE = '7';
+  // Readings below this confidence (out of 100) are flagged for the player
+  // to check. A reading another mode disagrees with is capped below it.
+  var MIN_CONFIDENCE = 70;
+  var DISAGREEMENT_CONFIDENCE = 50;
 
   // ---------------------------------------------------------------- picking
 
@@ -72,8 +125,8 @@
         .then(function (worker) {
           return worker
             .setParameters({
-              tessedit_char_whitelist: '123456789',
-              tessedit_pageseg_mode: '10',
+              tessedit_char_whitelist: DIGITS,
+              tessedit_pageseg_mode: PSM_CHAR,
             })
             .then(function () {
               return worker;
@@ -104,7 +157,9 @@
       var gray = new Float32Array(w * h);
       for (var i = 0; i < w * h; i++) {
         gray[i] =
-          0.299 * rgba[i * 4] + 0.587 * rgba[i * 4 + 1] + 0.114 * rgba[i * 4 + 2];
+          LUMA_RED * rgba[i * CHANNELS] +
+          LUMA_GREEN * rgba[i * CHANNELS + 1] +
+          LUMA_BLUE * rgba[i * CHANNELS + 2];
       }
       return { w: w, h: h, gray: gray };
     });
@@ -200,8 +255,8 @@
       var bw = c.x1 - c.x0 + 1;
       var bh = c.y1 - c.y0 + 1;
       var aspect = bw / bh;
-      if (aspect < 0.6 || aspect > 1.6) continue;
-      if (Math.min(bw, bh) < Math.min(w, h) * 0.25) continue;
+      if (aspect < GRID_MIN_ASPECT || aspect > GRID_MAX_ASPECT) continue;
+      if (Math.min(bw, bh) < Math.min(w, h) * GRID_MIN_SHARE) continue;
       if (!best || bw * bh > best.area) best = { c: c, area: bw * bh };
     }
     if (!best) throw new Error('I could not find the grid in that photo.');
@@ -209,30 +264,30 @@
     return [c2.tl, c2.tr, c2.br, c2.bl];
   }
 
-  // Solves the 8x8 system for the homography taking the square's corners to
+  // Solves the system of UNKNOWNS equations for the homography taking the square's corners to
   // [corners] (TL, TR, BR, BL).
   function homography(corners) {
     var src = [[0, 0], [SIZE, 0], [SIZE, SIZE], [0, SIZE]];
     var a = [];
-    for (var i = 0; i < 4; i++) {
+    for (var i = 0; i < src.length; i++) {
       var x = src[i][0], y = src[i][1], u = corners[i][0], v = corners[i][1];
       a.push([x, y, 1, 0, 0, 0, -u * x, -u * y, u]);
       a.push([0, 0, 0, x, y, 1, -v * x, -v * y, v]);
     }
-    for (var col = 0; col < 8; col++) {
+    for (var col = 0; col < UNKNOWNS; col++) {
       var pivot = col;
-      for (var r = col + 1; r < 8; r++) {
+      for (var r = col + 1; r < UNKNOWNS; r++) {
         if (Math.abs(a[r][col]) > Math.abs(a[pivot][col])) pivot = r;
       }
       var tmp = a[col]; a[col] = a[pivot]; a[pivot] = tmp;
-      for (var r2 = 0; r2 < 8; r2++) {
+      for (var r2 = 0; r2 < UNKNOWNS; r2++) {
         if (r2 === col) continue;
         var f = a[r2][col] / a[col][col];
-        for (var k = col; k < 9; k++) a[r2][k] -= f * a[col][k];
+        for (var k = col; k <= UNKNOWNS; k++) a[r2][k] -= f * a[col][k];
       }
     }
     var hm = [];
-    for (var j = 0; j < 8; j++) hm.push(a[j][8] / a[j][j]);
+    for (var j = 0; j < UNKNOWNS; j++) hm.push(a[j][UNKNOWNS] / a[j][j]);
     hm.push(1);
     return hm;
   }
@@ -247,7 +302,7 @@
         var v = (m[3] * x + m[4] * y + m[5]) / d;
         var ix = Math.floor(u), iy = Math.floor(v);
         if (ix < 0 || iy < 0 || ix >= w - 1 || iy >= h - 1) {
-          out[y * SIZE + x] = 255;
+          out[y * SIZE + x] = WHITE;
           continue;
         }
         var fx = u - ix, fy = v - iy;
@@ -265,10 +320,10 @@
   // The digit pixels of one cell as a small canvas ready for OCR, or null if
   // the cell is empty.
   function cellImage(ink, row, col, opt) {
-    var height = (opt && opt.height) || 48;
-    var cw = (opt && opt.cw) || 96;
-    var ch = (opt && opt.ch) || 96;
-    var margin = 6;
+    var height = (opt && opt.height) || OCR_DIGIT_HEIGHT;
+    var cw = (opt && opt.cw) || OCR_CANVAS;
+    var ch = (opt && opt.ch) || OCR_CANVAS;
+    var margin = CELL_MARGIN;
     var x0 = col * CELL + margin;
     var y0 = row * CELL + margin;
     var n = CELL - 2 * margin;
@@ -282,14 +337,16 @@
     for (var i = 1; i < found.info.length; i++) {
       var c = found.info[i];
       if (c.x0 === 0 || c.y0 === 0 || c.x1 === n - 1 || c.y1 === n - 1) continue;
-      if (c.count < 10) continue;
+      if (c.count < MIN_BLOB) continue;
       keep.push(i);
       total += c.count;
       bx0 = Math.min(bx0, c.x0); by0 = Math.min(by0, c.y0);
       bx1 = Math.max(bx1, c.x1); by1 = Math.max(by1, c.y1);
     }
     var bh = by1 - by0 + 1;
-    if (!keep.length || total < 40 || bh < n * 0.3) return null;
+    if (!keep.length || total < MIN_INK || bh < n * MIN_DIGIT_HEIGHT) {
+      return null;
+    }
 
     var bw = bx1 - bx0 + 1;
     var scale = height / bh;
@@ -308,10 +365,10 @@
       for (var xx = 0; xx < bw; xx++) {
         var lab = found.labels[(by0 + yy) * n + bx0 + xx];
         var on = lab && keep.indexOf(lab) >= 0;
-        var o = (yy * bw + xx) * 4;
-        var val = on ? 0 : 255;
+        var o = (yy * bw + xx) * CHANNELS;
+        var val = on ? 0 : WHITE;
         data.data[o] = val; data.data[o + 1] = val; data.data[o + 2] = val;
-        data.data[o + 3] = 255;
+        data.data[o + ALPHA] = WHITE;
       }
     }
     tctx.putImageData(data, 0, 0);
@@ -324,20 +381,24 @@
 
   function readFile(file, options) {
     return loadGray(file).then(function (img) {
-      var coarse = binarise(img.gray, img.w, img.h, Math.max(15, (Math.min(img.w, img.h) / 12) | 1), 0.85);
+      var coarseWindow = Math.max(
+        COARSE_MIN_WINDOW,
+        (Math.min(img.w, img.h) / COARSE_WINDOW_DIVISOR) | 1,
+      );
+      var coarse = binarise(img.gray, img.w, img.h, coarseWindow, COARSE_RATIO);
       var corners = findGrid(coarse, img.w, img.h);
       var flat = warp(img.gray, img.w, img.h, corners);
-      var ink = binarise(flat, SIZE, SIZE, 51, 0.82);
+      var ink = binarise(flat, SIZE, SIZE, FLAT_WINDOW, FLAT_RATIO);
 
       var cells = [];
-      for (var i = 0; i < 81; i++) {
-        cells.push(cellImage(ink, Math.floor(i / 9), i % 9, options));
+      for (var i = 0; i < CELLS; i++) {
+        cells.push(cellImage(ink, Math.floor(i / GRID), i % GRID, options));
       }
       var inked = cells.filter(Boolean).length;
       if (inked === 0) throw new Error('I could not see any digits in the grid.');
 
       return getWorker().then(function (worker) {
-        var digits = new Array(81).fill('0');
+        var digits = new Array(CELLS).fill('0');
         var uncertain = [];
         var confidences = {};
         var chain = Promise.resolve();
@@ -356,7 +417,8 @@
           if (!canvas) return;
           chain = chain
             .then(function () {
-              var modes = (options && options.modes) || ['8', '10', '7'];
+              var modes =
+                (options && options.modes) || [PSM_WORD, PSM_CHAR, PSM_LINE];
               if (!options || options.vote !== false) {
                 // Ask every layout, take the first answer, and flag the
                 // cell if another layout disagrees.
@@ -372,7 +434,12 @@
                   if (!seen.length) return all[0];
                   var best = seen[0];
                   var disagree = seen.some(function (r) { return r.digit !== best.digit; });
-                  return { digit: best.digit, confidence: disagree ? Math.min(best.confidence, 50) : best.confidence };
+                  return {
+                    digit: best.digit,
+                    confidence: disagree
+                      ? Math.min(best.confidence, DISAGREEMENT_CONFIDENCE)
+                      : best.confidence,
+                  };
                 });
               }
               var p = recognize(canvas, modes[0]);
@@ -386,7 +453,9 @@
             .then(function (res) {
               if (res.digit) digits[idx] = res.digit;
               confidences[idx] = res.confidence;
-              if (!res.digit || res.confidence < 70) uncertain.push(idx);
+              if (!res.digit || res.confidence < MIN_CONFIDENCE) {
+                uncertain.push(idx);
+              }
             });
         });
         return chain.then(function () {

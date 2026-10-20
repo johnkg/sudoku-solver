@@ -13,7 +13,12 @@ Iterable<List<T>> combinations<T>(List<T> items, int size) sync* {
   }
 }
 
-const sizeNames = {2: 'pair', 3: 'triple', 4: 'quad'};
+/// Sizes of the groups the subset and fish techniques look for.
+const pairSize = 2;
+const tripleSize = 3;
+const quadSize = 4;
+
+const sizeNames = {pairSize: 'pair', tripleSize: 'triple', quadSize: 'quad'};
 
 String joinCells(Iterable<int> cells) => cells.map(Board.cellName).join(', ');
 

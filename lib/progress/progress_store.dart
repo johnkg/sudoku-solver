@@ -25,7 +25,10 @@ class PuzzleRecord {
   final int? seconds;
 
   /// 3 for a clean solve, minus one for any mistakes and one for any hints.
-  int get stars => 3 - (mistakes > 0 ? 1 : 0) - (hints > 0 ? 1 : 0);
+  /// The most stars a solve can earn.
+  static const maxStars = 3;
+
+  int get stars => maxStars - (mistakes > 0 ? 1 : 0) - (hints > 0 ? 1 : 0);
 
   bool isBetterThan(PuzzleRecord other) =>
       mistakes + hints < other.mistakes + other.hints;

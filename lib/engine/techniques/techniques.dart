@@ -7,6 +7,7 @@ import 'hidden_subset.dart';
 import 'locked_candidates.dart';
 import 'naked_subset.dart';
 import 'naked_single.dart';
+import 'subsets.dart';
 import 'technique.dart';
 import 'uniqueness.dart';
 import 'wings.dart';
@@ -19,21 +20,21 @@ const List<SolvingTechnique> legacyTechniques = [
   HiddenSingle(),
   PointingPair(),
   BoxLineReduction(),
-  NakedSubset(2),
-  HiddenSubset(2),
-  NakedSubset(3),
-  HiddenSubset(3),
-  Fish(2),
+  NakedSubset(pairSize),
+  HiddenSubset(pairSize),
+  NakedSubset(tripleSize),
+  HiddenSubset(tripleSize),
+  Fish(pairSize),
   Skyscraper(),
   YWing(),
-  Fish(3),
-  NakedSubset(4),
-  HiddenSubset(4),
+  Fish(tripleSize),
+  NakedSubset(quadSize),
+  HiddenSubset(quadSize),
   XYZWing(),
   UniqueRectangle(),
   WWing(),
   SimpleColoring(),
-  Fish(4),
+  Fish(quadSize),
 ];
 
 /// All implemented techniques, easiest first. The solver always tries them in

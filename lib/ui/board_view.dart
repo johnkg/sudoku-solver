@@ -71,15 +71,15 @@ class BoardView extends StatelessWidget {
             onTapUp: onCellTap == null
                 ? null
                 : (details) {
-                    final cell = constraints.maxWidth / 9;
+                    final cell = constraints.maxWidth / Board.size;
                     final column = (details.localPosition.dx / cell)
                         .floor()
-                        .clamp(0, 8);
+                        .clamp(0, Board.size - 1);
                     final row = (details.localPosition.dy / cell).floor().clamp(
                       0,
-                      8,
+                      Board.size - 1,
                     );
-                    onCellTap!(row * 9 + column);
+                    onCellTap!(Board.cellAt(row, column));
                   },
             child: CustomPaint(
               painter: _BoardPainter(
@@ -107,6 +107,38 @@ class BoardView extends StatelessWidget {
 }
 
 class _BoardPainter extends CustomPainter {
+  /// Placed digits and pencil marks, as a share of a cell's width.
+  static const _digitScale = 0.62;
+  static const _markScale = 0.24;
+
+  /// Pencil marks sit in a small grid inside the cell, laid out like a box.
+  static const _marksPerRow = Board.boxSize;
+
+  /// Opacity of the tints over cells.
+  static const _peerTint = 0.10;
+  static const _selectedTint = 0.28;
+  static const _removedTint = 0.6;
+  static const _flashTint = 0.45;
+
+  /// The heavy lines around boxes.
+  static const _boxLineWidth = 2.5;
+  static const _boxLineAlpha = 0.75;
+
+  /// Extra markings: the outline of a cell a hint fills, and hatching.
+  static const _placedOutline = 3.0;
+  static const _hatchWidth = 1.2;
+  static const _hatchAlpha = 0.55;
+  static const _hatchGap = 7.0;
+
+  /// Lines between the cells of a pattern. A weak link is dashed: [_dash]
+  /// drawn in every [_dashPeriod].
+  static const _strongLinkWidth = 3.0;
+  static const _weakLinkWidth = 2.0;
+  static const _linkAlpha = 0.9;
+  static const _dash = 5.0;
+  static const _dashPeriod = 9.0;
+  static const _linkDotRadius = 3.5;
+
   _BoardPainter({
     required this.board,
     required this.givens,
@@ -141,7 +173,7 @@ class _BoardPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cell = size.width / 9;
+    final cell = size.width / Board.size;
     final step = this.step;
     final highlighted = {...?step?.highlightCells};
     final placed = {
@@ -183,11 +215,11 @@ class _BoardPainter extends CustomPainter {
         ? const <int>{}
         : {...Board.peers[selected!]};
     final peerTint = Color.alphaBlend(
-      scheme.primary.withValues(alpha: 0.10),
+      scheme.primary.withValues(alpha: _peerTint),
       scheme.surfaceContainerLowest,
     );
     final selectedTint = Color.alphaBlend(
-      scheme.primary.withValues(alpha: 0.28),
+      scheme.primary.withValues(alpha: _selectedTint),
       scheme.surfaceContainerLowest,
     );
 
@@ -198,7 +230,7 @@ class _BoardPainter extends CustomPainter {
           if (board.values[peer] == entry.value) peer,
     };
 
-    for (var c = 0; c < 81; c++) {
+    for (var c = 0; c < Board.cellCount; c++) {
       Color? fill;
       if (peers.contains(c)) fill = peerTint;
       if (selectedValue != 0 && board.values[c] == selectedValue) {
@@ -209,7 +241,7 @@ class _BoardPainter extends CustomPainter {
       if (placed.containsKey(c)) {
         fill = scheme.tertiaryContainer;
       } else if (removed.containsKey(c)) {
-        fill = scheme.errorContainer.withValues(alpha: 0.6);
+        fill = scheme.errorContainer.withValues(alpha: _removedTint);
       } else if (highlighted.contains(c)) {
         fill = scheme.primaryContainer;
       }
@@ -227,7 +259,7 @@ class _BoardPainter extends CustomPainter {
             rectOf(c).deflate(2),
             Paint()
               ..style = PaintingStyle.stroke
-              ..strokeWidth = 3
+              ..strokeWidth = _placedOutline
               ..color = scheme.tertiary,
           );
         }
@@ -237,7 +269,7 @@ class _BoardPainter extends CustomPainter {
           rectOf(c),
           Paint()
             ..color = scheme.primary.withValues(
-              alpha: 0.45 * (1 - flashProgress),
+              alpha: _flashTint * (1 - flashProgress),
             ),
         );
       }
@@ -245,7 +277,7 @@ class _BoardPainter extends CustomPainter {
 
     _drawGrid(canvas, size, cell);
 
-    for (var c = 0; c < 81; c++) {
+    for (var c = 0; c < Board.cellCount; c++) {
       final rect = rectOf(c);
       final value = board.values[c];
       if (value != 0) {
@@ -253,7 +285,7 @@ class _BoardPainter extends CustomPainter {
           canvas,
           '$value',
           rect.center,
-          fontSize: cell * 0.62,
+          fontSize: cell * _digitScale,
           color: givens.contains(c) ? scheme.onSurface : scheme.primary,
           weight: givens.contains(c) ? FontWeight.w700 : FontWeight.w500,
         );
@@ -264,7 +296,7 @@ class _BoardPainter extends CustomPainter {
           canvas,
           '${wrong[c]}',
           rect.center,
-          fontSize: cell * 0.62,
+          fontSize: cell * _digitScale,
           color: scheme.error,
           weight: FontWeight.w500,
         );
@@ -275,7 +307,7 @@ class _BoardPainter extends CustomPainter {
           canvas,
           '${placed[c]}',
           rect.center,
-          fontSize: cell * 0.62,
+          fontSize: cell * _digitScale,
           color: scheme.onTertiaryContainer,
           weight: FontWeight.w700,
         );
@@ -304,10 +336,12 @@ class _BoardPainter extends CustomPainter {
           canvas,
           '$digit',
           Offset(
-            rect.left + cell * ((digit - 1) % 3 + 0.5) / 3,
-            rect.top + cell * ((digit - 1) ~/ 3 + 0.5) / 3,
+            rect.left +
+                cell * ((digit - 1) % _marksPerRow + 0.5) / _marksPerRow,
+            rect.top +
+                cell * ((digit - 1) ~/ _marksPerRow + 0.5) / _marksPerRow,
           ),
-          fontSize: cell * 0.24,
+          fontSize: cell * _markScale,
           color: eliminated
               ? scheme.error
               : inPattern
@@ -323,8 +357,10 @@ class _BoardPainter extends CustomPainter {
 
   /// Where digit [digit]'s pencil mark sits inside [cell]'s square.
   Offset _markCenter(int cell, int digit, double size) => Offset(
-    Board.columnOf(cell) * size + size * ((digit - 1) % 3 + 0.5) / 3,
-    Board.rowOf(cell) * size + size * ((digit - 1) ~/ 3 + 0.5) / 3,
+    Board.columnOf(cell) * size +
+        size * ((digit - 1) % _marksPerRow + 0.5) / _marksPerRow,
+    Board.rowOf(cell) * size +
+        size * ((digit - 1) ~/ _marksPerRow + 0.5) / _marksPerRow,
   );
 
   /// The links of the step's pattern, drawn between the pencil marks they are
@@ -334,27 +370,27 @@ class _BoardPainter extends CustomPainter {
       final from = _markCenter(link.from, link.digit, cell);
       final to = _markCenter(link.to, link.digit, cell);
       final color = (link.strong ? scheme.primary : scheme.tertiary).withValues(
-        alpha: 0.9,
+        alpha: _linkAlpha,
       );
       final line = Paint()
         ..color = color
-        ..strokeWidth = link.strong ? 3 : 2
+        ..strokeWidth = link.strong ? _strongLinkWidth : _weakLinkWidth
         ..strokeCap = StrokeCap.round;
       if (link.strong) {
         canvas.drawLine(from, to, line);
       } else {
         final length = (to - from).distance;
         final direction = (to - from) / length;
-        for (var d = 0.0; d < length; d += 9) {
+        for (var d = 0.0; d < length; d += _dashPeriod) {
           canvas.drawLine(
             from + direction * d,
-            from + direction * (d + 5 < length ? d + 5 : length),
+            from + direction * (d + _dash < length ? d + _dash : length),
             line,
           );
         }
       }
       for (final end in [from, to]) {
-        canvas.drawCircle(end, 3.5, Paint()..color = color);
+        canvas.drawCircle(end, _linkDotRadius, Paint()..color = color);
       }
     }
   }
@@ -365,9 +401,9 @@ class _BoardPainter extends CustomPainter {
     canvas.save();
     canvas.clipRect(rect);
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.55)
-      ..strokeWidth = 1.2;
-    const gap = 7.0;
+      ..color = color.withValues(alpha: _hatchAlpha)
+      ..strokeWidth = _hatchWidth;
+    const gap = _hatchGap;
     for (var d = -rect.height; d < rect.width; d += gap) {
       if (forward) {
         canvas.drawLine(
@@ -391,10 +427,10 @@ class _BoardPainter extends CustomPainter {
       ..color = scheme.outlineVariant
       ..strokeWidth = 1;
     final thick = Paint()
-      ..color = scheme.onSurface.withValues(alpha: 0.75)
-      ..strokeWidth = 2.5;
-    for (var i = 0; i <= 9; i++) {
-      final paint = i % 3 == 0 ? thick : thin;
+      ..color = scheme.onSurface.withValues(alpha: _boxLineAlpha)
+      ..strokeWidth = _boxLineWidth;
+    for (var i = 0; i <= Board.size; i++) {
+      final paint = i % Board.boxSize == 0 ? thick : thin;
       final p = i * cell;
       canvas.drawLine(Offset(p, 0), Offset(p, size.height), paint);
       canvas.drawLine(Offset(0, p), Offset(size.width, p), paint);
@@ -432,9 +468,9 @@ class _BoardPainter extends CustomPainter {
 
   @override
   SemanticsBuilderCallback get semanticsBuilder => (size) {
-    final cell = size.width / 9;
+    final cell = size.width / Board.size;
     return [
-      for (var c = 0; c < 81; c++)
+      for (var c = 0; c < Board.cellCount; c++)
         CustomPainterSemantics(
           key: ValueKey(c),
           rect: Rect.fromLTWH(

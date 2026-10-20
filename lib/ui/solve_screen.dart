@@ -12,6 +12,7 @@ import '../settings/settings.dart';
 import 'achievements.dart';
 import 'board_view.dart';
 import 'hint_ladder.dart';
+import 'layout.dart';
 import 'learn_tab.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
@@ -51,6 +52,9 @@ class SolveScreen extends StatefulWidget {
   State<SolveScreen> createState() => _SolveScreenState();
 }
 
+/// How long a completed row, column or box flashes.
+const _flashDuration = Duration(milliseconds: 700);
+
 class _SolveScreenState extends State<SolveScreen>
     with WidgetsBindingObserver, SingleTickerProviderStateMixin {
   late final ProgressStore store = ProgressScope.read(context);
@@ -67,7 +71,7 @@ class _SolveScreenState extends State<SolveScreen>
   /// Fades the flash over rows, columns and boxes the player just completed.
   late final AnimationController _flash = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 700),
+    duration: _flashDuration,
   );
   int _seenCompleted = 0;
   int _seenMistakes = 0;
@@ -321,7 +325,7 @@ class _SolveScreenState extends State<SolveScreen>
         builder: (_) => WalkthroughScreen(
           start: controller.board.copy(),
           givens: {
-            for (var c = 0; c < 81; c++)
+            for (var c = 0; c < Board.cellCount; c++)
               if (controller.board.values[c] != 0) c,
           },
           title: 'Guide: ${widget.puzzle.title}',
@@ -450,17 +454,16 @@ class _SolveScreenState extends State<SolveScreen>
 
                 // Side by side on wide screens and on phones turned sideways, where a
                 // full-width board would not fit the height.
-                if (constraints.maxWidth >= 840 ||
-                    constraints.maxWidth > constraints.maxHeight * 1.2) {
+                if (useSideBySide(constraints)) {
                   return Padding(
                     padding: const EdgeInsets.all(24),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Expanded(flex: 3, child: board),
+                        Expanded(flex: boardFlex, child: board),
                         const SizedBox(width: 24),
                         Expanded(
-                          flex: 2,
+                          flex: panelFlex,
                           child: SingleChildScrollView(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -514,10 +517,12 @@ class _SolveScreenState extends State<SolveScreen>
 
 /// Seconds as `m:ss`, or `h:mm:ss` past an hour.
 String formatClock(int seconds) {
-  final h = seconds ~/ 3600;
-  final m = (seconds % 3600) ~/ 60;
-  final s = (seconds % 60).toString().padLeft(2, '0');
-  return h > 0 ? '$h:${m.toString().padLeft(2, '0')}:$s' : '$m:$s';
+  final time = Duration(seconds: seconds);
+  String twoDigits(int n) => n.toString().padLeft(2, '0');
+  final h = time.inHours;
+  final m = time.inMinutes.remainder(Duration.minutesPerHour);
+  final s = twoDigits(time.inSeconds.remainder(Duration.secondsPerMinute));
+  return h > 0 ? '$h:${twoDigits(m)}:$s' : '$m:$s';
 }
 
 /// Stands in for the board while paused, so the puzzle cannot be studied with
@@ -565,7 +570,7 @@ class _Disabled extends StatelessWidget {
   @override
   Widget build(BuildContext context) => IgnorePointer(
     ignoring: disabled,
-    child: Opacity(opacity: disabled ? 0.4 : 1, child: child),
+    child: Opacity(opacity: disabled ? disabledOpacity : 1, child: child),
   );
 }
 
@@ -775,13 +780,13 @@ class _ToolButton extends StatelessWidget {
     final enabled = onPressed != null;
     final color = enabled
         ? scheme.onSurfaceVariant
-        : scheme.onSurface.withValues(alpha: 0.38);
+        : scheme.onSurface.withValues(alpha: disabledOpacity);
 
     return Tooltip(
       message: tooltip,
       child: InkWell(
         onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(keyRadius),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 8),
           child: Column(
@@ -851,14 +856,15 @@ class _NumberPad extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
         children: [
-          for (var digit = 1; digit <= 9; digit++)
+          for (var digit = 1; digit <= maxDigit; digit++)
             Expanded(
               child: Builder(
                 builder: (context) {
-                  final done = values.where((v) => v == digit).length >= 9;
+                  final done =
+                      values.where((v) => v == digit).length >= Board.size;
                   return InkWell(
                     key: Key('digit-$digit'),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(keyRadius),
                     onTap: done
                         ? null
                         : () => controller.armed == null
@@ -876,7 +882,7 @@ class _NumberPad extends StatelessWidget {
                         color: controller.armed == digit
                             ? scheme.primaryContainer
                             : null,
-                        borderRadius: BorderRadius.circular(12),
+                        borderRadius: BorderRadius.circular(keyRadius),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       child: Text(
@@ -885,7 +891,9 @@ class _NumberPad extends StatelessWidget {
                         style: theme.textTheme.headlineLarge?.copyWith(
                           fontWeight: FontWeight.w400,
                           color: done
-                              ? scheme.onSurface.withValues(alpha: 0.2)
+                              ? scheme.onSurface.withValues(
+                                  alpha: usedUpOpacity,
+                                )
                               : scheme.primary,
                         ),
                       ),
@@ -942,8 +950,8 @@ class _StepPanel extends StatelessWidget {
       );
     } else if (step != null) {
       content = switch (controller.hintLevel) {
-        1 => _hintStage(context, step, controller),
-        2 => _hintStage(context, step, controller),
+        SolveController.hintNudge ||
+        SolveController.hintTechnique => _hintStage(context, step, controller),
         _ => _fullMove(context, step, controller),
       };
     } else if (controller.stuck) {
@@ -1107,7 +1115,7 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
         ),
       ),
       const SizedBox(height: 8),
-      if (level == 1)
+      if (level == SolveController.hintNudge)
         Text(nudgeText(step), style: theme.textTheme.bodyLarge)
       else ...[
         Wrap(
@@ -1133,12 +1141,12 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
         runSpacing: 4,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          if (level == 1)
+          if (level == SolveController.hintNudge)
             FilledButton.tonal(
               onPressed: controller.moreHelp,
               child: const Text('Another hint'),
             ),
-          if (level == 1)
+          if (level == SolveController.hintNudge)
             TextButton(
               onPressed: controller.showMove,
               child: const Text('Show the move'),
@@ -1148,7 +1156,7 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
               onPressed: controller.showMove,
               child: const Text('Show the move'),
             ),
-          if (level == 2)
+          if (level == SolveController.hintTechnique)
             TextButton(
               onPressed: () => openLesson(context, lessonFor(step.technique)),
               child: const Text('How it works'),

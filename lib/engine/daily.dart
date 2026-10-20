@@ -11,17 +11,26 @@ import 'techniques/techniques.dart';
 /// web as on the VM.
 class SeededRandom implements Random {
   SeededRandom(int seed)
-    : _state = (seed & _mask) == 0 ? 0x9E3779B9 : seed & _mask;
+    : _state = (seed & _mask) == 0 ? _zeroSeedState : seed & _mask;
 
   static const _mask = 0xFFFFFFFF;
+
+  /// xorshift32 gets stuck at zero, so a zero seed starts here instead. Any
+  /// non-zero value works; this is the usual golden-ratio constant.
+  static const _zeroSeedState = 0x9E3779B9;
+
+  /// Marsaglia's shift triple for xorshift32.
+  static const _shiftA = 13;
+  static const _shiftB = 17;
+  static const _shiftC = 5;
 
   int _state;
 
   int _next32() {
     var x = _state;
-    x ^= (x << 13) & _mask;
-    x ^= x >> 17;
-    x ^= (x << 5) & _mask;
+    x ^= (x << _shiftA) & _mask;
+    x ^= x >> _shiftB;
+    x ^= (x << _shiftC) & _mask;
     _state = x & _mask;
     return _state;
   }
@@ -41,13 +50,24 @@ class SeededRandom implements Random {
   bool nextBool() => _next32() & 1 == 1;
 }
 
-/// The difficulty level of the daily puzzle: easy early in the week, hardest
-/// at the weekend. Mon 1, Tue 2, Wed 3, Thu 4, Fri 4, Sat 5, Sun 5.
-int dailyLevel(DateTime date) =>
-    const [1, 2, 3, 4, 4, 5, 5][date.weekday - DateTime.monday];
+/// The daily puzzle's level for each weekday, Monday first: easy early in the
+/// week, hardest at the weekend.
+const _levelByWeekday = [1, 2, 3, 4, 4, 5, 5];
 
-/// A number that identifies the calendar day, such as 20261010.
-int dailySeed(DateTime date) => date.year * 10000 + date.month * 100 + date.day;
+int dailyLevel(DateTime date) =>
+    _levelByWeekday[date.weekday - DateTime.monday];
+
+/// A number that identifies the calendar day, such as 20261010: the date's
+/// digits run together.
+int dailySeed(DateTime date) =>
+    date.year * _yearPlace + date.month * _monthPlace + date.day;
+
+const _yearPlace = 10000;
+const _monthPlace = 100;
+
+/// How many puzzles the daily search may try before giving up. Far more than
+/// any day needs.
+const dailyMaxAttempts = 20000;
 
 /// The puzzle for [date]: the same one for everybody on that day.
 ///
@@ -60,7 +80,7 @@ Future<FoundPuzzle?> findDailyPuzzle(
 }) => findPuzzleOfLevel(
   dailyLevel(date),
   SeededRandom(dailySeed(date)),
-  maxAttempts: 20000,
+  maxAttempts: dailyMaxAttempts,
   techniques: legacyTechniques,
   isCancelled: isCancelled,
   yieldTurn: yieldTurn,
