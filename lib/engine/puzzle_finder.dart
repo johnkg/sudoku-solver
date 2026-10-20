@@ -4,6 +4,8 @@ import 'dart:math';
 import 'board.dart';
 import 'generator.dart';
 import 'rater.dart';
+import 'solver.dart';
+import 'step.dart';
 
 /// A puzzle together with how it was rated.
 class FoundPuzzle {
@@ -15,7 +17,7 @@ class FoundPuzzle {
 
 /// Clue floors worth trying for [level]. Puzzles with more clues tend to be
 /// easier, so low levels start from fuller grids.
-List<int> _clueFloorsFor(int level) => switch (level) {
+List<int> clueFloorsFor(int level) => switch (level) {
   1 => const [40, 46, 52, 58],
   2 => const [34, 38, 42],
   3 => const [26, 30, 34],
@@ -37,7 +39,7 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
 }) async {
-  final floors = _clueFloorsFor(level);
+  final floors = clueFloorsFor(level);
   for (var attempt = 0; attempt < maxAttempts; attempt++) {
     if (isCancelled?.call() ?? false) return null;
 
@@ -47,6 +49,87 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
     );
     final rating = ratePuzzle(puzzle);
     if (rating.level == level) return FoundPuzzle(puzzle, rating);
+
+    await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
+  }
+  return null;
+}
+
+/// Generates random puzzles until one is built around [technique]. A puzzle
+/// that cannot be solved without it (see [ratePuzzle]) is best; harder
+/// techniques are rarely strictly needed, so after [preferAttempts] tries a
+/// puzzle that merely uses it is accepted. Check `rating.required` to tell
+/// which one came back. Returns null after [maxAttempts] tries or once
+/// [isCancelled] says to stop.
+Future<FoundPuzzle?> findPuzzleRequiring(
+  Technique technique,
+  Random random, {
+  int maxAttempts = 3000,
+  int preferAttempts = 80,
+  bool Function()? isCancelled,
+  Future<void> Function()? yieldTurn,
+}) async {
+  final floors = [...clueFloorsFor(technique.level), 0, 28, 36];
+  FoundPuzzle? uses;
+  for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    if (isCancelled?.call() ?? false) return null;
+
+    final puzzle = generatePuzzle(
+      random,
+      minClues: floors[random.nextInt(floors.length)],
+    );
+    final rating = ratePuzzle(puzzle);
+    if (rating.required == technique) return FoundPuzzle(puzzle, rating);
+    if (rating.uses.containsKey(technique)) {
+      uses ??= FoundPuzzle(puzzle, rating);
+      if (attempt >= preferAttempts) return uses;
+    }
+
+    await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
+  }
+  return uses;
+}
+
+/// A board partway through a solve where [step], a use of its technique, is
+/// the solver's next move.
+class TechniqueMoment {
+  const TechniqueMoment(this.board, this.step);
+
+  final Board board;
+  final Step step;
+}
+
+/// Generates random puzzles and solves them like a human until the solver
+/// reaches a use of [technique], and returns that moment. Returns null after
+/// [maxAttempts] puzzles or once [isCancelled] says to stop.
+Future<TechniqueMoment?> findMomentOf(
+  Technique technique,
+  Random random, {
+  int maxAttempts = 3000,
+  bool Function()? isCancelled,
+  Future<void> Function()? yieldTurn,
+}) async {
+  const solver = Solver();
+  // Harder techniques turn up in sparse puzzles, but easier ones such as
+  // pointing pairs are crowded out there by singles, so mix both.
+  const floors = [0, 0, 24, 30, 36, 42];
+  for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    if (isCancelled?.call() ?? false) return null;
+
+    final board = generatePuzzle(
+      random,
+      minClues: floors[random.nextInt(floors.length)],
+    );
+    for (
+      var step = solver.nextStep(board);
+      step != null;
+      step = solver.nextStep(board)
+    ) {
+      if (step.technique == technique) {
+        return TechniqueMoment(board.copy(), step);
+      }
+      board.applyStep(step);
+    }
 
     await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
   }

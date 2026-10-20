@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../engine/engine.dart';
-
-/// Runs [search] while a progress dialog is up. Returns the puzzle, or null if
-/// the player cancelled or nothing was found (in which case a message is
-/// shown). The dialog is closed before this returns.
+/// Runs [search] while a progress dialog is up. Returns what it found, or
+/// null if the player cancelled or nothing was found (in which case a message
+/// is shown). The dialog is closed before this returns.
 ///
 /// [search] is given a function to poll; it should stop when that returns true.
-Future<FoundPuzzle?> runSearchWithDialog(
+Future<T?> runSearchWithDialog<T>(
   BuildContext context, {
   required String message,
-  required Future<FoundPuzzle?> Function(bool Function() isCancelled) search,
+  required Future<T?> Function(bool Function() isCancelled) search,
+  String notFound = 'Could not find a puzzle. Try again.',
 }) async {
   var cancelled = false;
   final navigator = Navigator.of(context);
@@ -49,9 +48,7 @@ Future<FoundPuzzle?> runSearchWithDialog(
   navigator.pop(); // close the dialog
 
   if (found == null) {
-    messenger?.showSnackBar(
-      const SnackBar(content: Text('Could not find a puzzle. Try again.')),
-    );
+    messenger?.showSnackBar(SnackBar(content: Text(notFound)));
   }
   return found;
 }
