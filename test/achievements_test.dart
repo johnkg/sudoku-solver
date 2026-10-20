@@ -118,6 +118,39 @@ void main() {
       expect(unlockedAchievementIds(store), contains('completionist'));
     });
 
+    test('sharp eye counts right answers across techniques', () {
+      final store = ProgressStore.memory();
+      for (var i = 0; i < 24; i++) {
+        store.recordTechnique(i.isEven ? 'nakedPair' : 'xWing', right: true);
+      }
+      store.recordTechnique('xWing', right: false); // wrong ones do not count
+      expect(achievement(store, 'sharp-eye').progress, 24);
+      expect(achievement(store, 'sharp-eye').unlocked, isFalse);
+      store.recordTechnique('yWing', right: true);
+      expect(achievement(store, 'sharp-eye').unlocked, isTrue);
+    });
+
+    test('technique master needs ten tries at 90% or better', () {
+      final store = ProgressStore.memory();
+      for (var i = 0; i < 9; i++) {
+        store.recordTechnique('nakedPair', right: true);
+      }
+      expect(
+        achievement(store, 'technique-master').unlocked,
+        isFalse,
+      ); // 9 tries
+      store.recordTechnique('nakedPair', right: true);
+      expect(achievement(store, 'technique-master').unlocked, isTrue); // 10/10
+
+      final sloppy = ProgressStore.memory();
+      for (var i = 0; i < 8; i++) {
+        sloppy.recordTechnique('xWing', right: true);
+      }
+      sloppy.recordTechnique('xWing', right: false);
+      sloppy.recordTechnique('xWing', right: false); // 8 of 10
+      expect(achievement(sloppy, 'technique-master').unlocked, isFalse);
+    });
+
     test('a reset forgets them', () {
       final store = ProgressStore.memory()
         ..recordSolve(puzzleLibrary.first.id, mistakes: 0, hints: 0);

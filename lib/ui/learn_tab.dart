@@ -7,6 +7,7 @@ import 'level_header.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'unlocking.dart';
+import 'weak_spots.dart';
 
 /// The list of technique lessons, grouped by level. A level opens once the
 /// one below is solved.
@@ -29,6 +30,39 @@ class LearnTab extends StatelessWidget {
               'most advanced. Each lesson has a worked example.',
               style: theme.textTheme.bodyLarge,
             ),
+            if (weakSpots(store).isNotEmpty)
+              Card(
+                key: const Key('revisit'),
+                margin: const EdgeInsets.only(top: 12),
+                color: theme.colorScheme.tertiaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Worth revisiting',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: theme.colorScheme.onTertiaryContainer,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          for (final t in weakSpots(store))
+                            ActionChip(
+                              key: Key('revisit-${t.name}'),
+                              label: Text(t.label),
+                              onPressed: () =>
+                                  openLesson(context, lessonFor(t)),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             for (final level in levelNames.keys) ...[
               Builder(
                 builder: (context) {

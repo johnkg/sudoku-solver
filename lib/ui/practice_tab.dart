@@ -8,6 +8,7 @@ import 'puzzle_library.dart';
 import 'random_puzzle.dart';
 import 'solve_screen.dart';
 import 'stars.dart';
+import 'technique_puzzle.dart';
 import 'unlocking.dart';
 
 /// The list of practice puzzles, grouped by level. A level opens once the one
@@ -40,6 +41,9 @@ class PracticeTab extends StatelessWidget {
             ),
             const DailyPuzzleCard(),
             RandomPuzzleCard(
+              isUnlocked: (level) => isLevelUnlocked(store, level),
+            ),
+            TechniquePuzzleCard(
               isUnlocked: (level) => isLevelUnlocked(store, level),
             ),
             for (final level in levelNames.keys) ...[

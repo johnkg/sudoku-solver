@@ -38,6 +38,8 @@ List<Achievement> achievementsFor(ProgressStore store) {
       puzzleLibrary.where((p) => p.level == level).length;
 
   final results = [...records.values, ...store.dailyRecords.values];
+  final stats = store.techniqueStats.values;
+  final rightAnswers = stats.fold<int>(0, (sum, s) => sum + s.right);
 
   return [
     Achievement(
@@ -99,6 +101,21 @@ List<Achievement> achievementsFor(ProgressStore store) {
         progress: store.bestDailyStreak,
         goal: days,
       ),
+    Achievement(
+      id: 'sharp-eye',
+      title: 'Sharp eye',
+      description: 'Spot or apply a technique correctly 25 times.',
+      icon: Icons.visibility_outlined,
+      progress: rightAnswers,
+      goal: 25,
+    ),
+    Achievement(
+      id: 'technique-master',
+      title: 'Technique master',
+      description: 'Be right at least 90% of 10 tries at one technique.',
+      icon: Icons.school_outlined,
+      progress: stats.any((s) => s.attempts >= 10 && s.accuracy >= 0.9) ? 1 : 0,
+    ),
   ];
 }
 

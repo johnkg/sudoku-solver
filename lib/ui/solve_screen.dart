@@ -202,6 +202,10 @@ class _SolveScreenState extends State<SolveScreen>
       if (_recorded) return;
       _recorded = true;
       final before = unlockedAchievementIds(store);
+      // Techniques the player needed a hint for count as ones to revisit.
+      for (final technique in controller.applied) {
+        store.recordTechnique(technique.name, right: false);
+      }
       final dailyKey = widget.dailyKey;
       if (dailyKey != null) {
         store.recordDaily(

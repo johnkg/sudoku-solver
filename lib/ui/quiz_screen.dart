@@ -1,21 +1,31 @@
 import 'package:flutter/material.dart' hide Step;
 
+import 'dart:math';
+
 import '../engine/engine.dart';
+import '../progress/progress_scope.dart';
 import 'board_view.dart';
 import 'quiz.dart';
+import 'search_dialog.dart';
 
 /// Shows boards where [technique] applies and asks the player to spot it.
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key, required this.technique});
+  const QuizScreen({super.key, required this.technique, this.freshQuestions});
 
   final Technique technique;
+
+  /// Finds a round of new questions, stopping when told to. Defaults to
+  /// generating boards; tests pass their own.
+  final Future<List<QuizQuestion>?> Function(bool Function() isCancelled)?
+  freshQuestions;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  late final List<QuizQuestion> questions = quizQuestions(widget.technique);
+  late List<QuizQuestion> questions = quizQuestions(widget.technique);
+  int round = 1;
   int index = 0;
   int score = 0;
   final marked = <int>{};
@@ -28,6 +38,8 @@ class _QuizScreenState extends State<QuizScreen> {
     final right =
         marked.length == question.targets.length &&
         marked.containsAll(question.targets);
+    ProgressScope.read(context)
+        .recordTechnique(widget.technique.name, right: right);
     setState(() {
       correct = right;
       if (right) score++;
@@ -52,6 +64,40 @@ class _QuizScreenState extends State<QuizScreen> {
     correct = null;
   });
 
+  Future<List<QuizQuestion>?> _generate(bool Function() isCancelled) async {
+    final random = Random();
+    final found = <QuizQuestion>[];
+    for (var i = 0; i < 5; i++) {
+      final moment = await findMomentOf(
+        widget.technique,
+        random,
+        isCancelled: isCancelled,
+      );
+      if (moment == null) break;
+      found.add(QuizQuestion(moment.board, moment.step));
+    }
+    return found.isEmpty ? null : found;
+  }
+
+  /// Swaps in a round of freshly generated boards.
+  Future<void> _more() async {
+    final found = await runSearchWithDialog<List<QuizQuestion>>(
+      context,
+      message: 'Finding fresh ${widget.technique.label} boards…',
+      notFound: 'No fresh boards this time. Try again.',
+      search: widget.freshQuestions ?? _generate,
+    );
+    if (found == null || !mounted) return;
+    setState(() {
+      questions = found;
+      round++;
+      index = 0;
+      score = 0;
+      marked.clear();
+      correct = null;
+    });
+  }
+
   void _restart() => setState(() {
     index = 0;
     score = 0;
@@ -70,7 +116,9 @@ class _QuizScreenState extends State<QuizScreen> {
         label: label,
         score: score,
         total: questions.length,
+        round: round,
         onRetry: _restart,
+        onMore: _more,
       );
     } else {
       final q = question;
@@ -79,7 +127,8 @@ class _QuizScreenState extends State<QuizScreen> {
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            'Question ${index + 1} of ${questions.length} · $score right',
+            '${round > 1 ? 'Round $round · ' : ''}Question ${index + 1} of '
+            '${questions.length} · $score right',
             style: theme.textTheme.labelLarge?.copyWith(
               color: theme.colorScheme.primary,
             ),
@@ -157,13 +206,17 @@ class _Results extends StatelessWidget {
     required this.label,
     required this.score,
     required this.total,
+    required this.round,
     required this.onRetry,
+    required this.onMore,
   });
 
   final String label;
   final int score;
   final int total;
+  final int round;
   final VoidCallback onRetry;
+  final VoidCallback onMore;
 
   @override
   Widget build(BuildContext context) {
@@ -188,6 +241,12 @@ class _Results extends StatelessWidget {
           key: const Key('quiz-retry'),
           onPressed: onRetry,
           child: const Text('Try again'),
+        ),
+        const SizedBox(height: 8),
+        FilledButton.tonal(
+          key: const Key('quiz-more'),
+          onPressed: onMore,
+          child: const Text('Fresh boards'),
         ),
         const SizedBox(height: 8),
         OutlinedButton(

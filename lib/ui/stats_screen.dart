@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../engine/engine.dart' show Technique;
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart' show ProgressStore;
 import 'achievements.dart';
@@ -7,6 +8,7 @@ import 'daily_calendar.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'solve_screen.dart' show formatClock;
+import 'weak_spots.dart';
 
 /// What the player has achieved: puzzles solved, stars, streak, and the
 /// fastest solve per level.
@@ -86,6 +88,7 @@ class StatsScreen extends StatelessWidget {
                   ),
                 ],
               ),
+              ..._techniqueSection(context, store),
               Padding(
                 padding: const EdgeInsets.only(top: 20, bottom: 8),
                 child: Text(
@@ -189,6 +192,76 @@ class StatsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+/// How the player is doing at each technique they have been asked about, with
+/// the ones to revisit first.
+List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
+  final theme = Theme.of(context);
+  final stats = store.techniqueStats;
+  final asked = [
+    for (final t in Technique.values)
+      if (stats.containsKey(t.name)) t,
+  ];
+  if (asked.isEmpty) return const [];
+  final weak = weakSpots(store);
+
+  return [
+    Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      child: Text(
+        'Techniques',
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    if (weak.isNotEmpty)
+      Card(
+        key: const Key('weak-spots'),
+        color: theme.colorScheme.tertiaryContainer,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Text(
+            'Worth revisiting: ${weak.map((t) => t.label).join(', ')}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onTertiaryContainer,
+            ),
+          ),
+        ),
+      ),
+    for (final t in asked)
+      Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            Expanded(
+              flex: 4,
+              child: Text(t.label, style: theme.textTheme.bodyMedium),
+            ),
+            Expanded(
+              flex: 5,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  minHeight: 8,
+                  value: stats[t.name]!.accuracy,
+                ),
+              ),
+            ),
+            SizedBox(
+              width: 56,
+              child: Text(
+                '${stats[t.name]!.right}/${stats[t.name]!.attempts}',
+                key: Key('stat-${t.name}'),
+                textAlign: TextAlign.end,
+                style: theme.textTheme.labelMedium,
+              ),
+            ),
+          ],
+        ),
+      ),
+  ];
 }
 
 /// Everything there is to earn, with how far along the player is.
