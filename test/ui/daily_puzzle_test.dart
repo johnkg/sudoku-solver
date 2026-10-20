@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sudoku_solver/engine/engine.dart';
 import 'package:sudoku_solver/progress/progress_store.dart';
 import 'package:sudoku_solver/ui/app.dart';
 import 'package:sudoku_solver/ui/board_view.dart';
 import 'package:sudoku_solver/ui/daily_puzzle.dart';
+import 'package:sudoku_solver/ui/solve_screen.dart';
 import 'package:sudoku_solver/ui/stars.dart';
+
+import '../support.dart';
 
 // 2026-10-12 is a Monday, so the daily puzzle is Level 1.
 final monday = DateTime(2026, 10, 12);
@@ -182,5 +186,64 @@ void main() {
     await tester.pumpAndSettle();
     expect(store.dailyPuzzleText('2026-10-10'), isNull);
     expect(find.byType(BoardView), findsNothing);
+  });
+
+  testWidgets('solving the daily offers to share the result, and cheers', (
+    tester,
+  ) async {
+    phone(tester);
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map)['text'] as String;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+    final store = ProgressStore.memory(now: () => monday)
+      ..saveDailyPuzzle('2026-10-12', mondayPuzzle)
+      ..recordDaily('2026-10-11', mistakes: 0, hints: 0);
+    await openPractice(tester, store);
+    await tester.tap(find.text('Play today\'s puzzle'));
+    await tester.pumpAndSettle();
+
+    final start = Board.parse(mondayPuzzle);
+    final solution = solveByBacktracking(start)!;
+    for (var cell = 0; cell < 81; cell++) {
+      if (start.values[cell] == 0) {
+        await playMove(tester, cell, solution.values[cell]);
+      }
+    }
+    await tester.pumpAndSettle();
+
+    // Yesterday's flawless daily already earned the first two, so this fast
+    // solve earns only the speed one.
+    expect(find.text('Achievement unlocked: Quick thinker'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('share-result')));
+    await tester.tap(find.byKey(const Key('share-result')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Result copied'), findsOneWidget);
+    expect(copied, contains('Sudoku Technique Teacher · Mon, Oct 12'));
+    expect(copied, contains('Level 1 · Beginner'));
+    expect(copied, contains('★★★'));
+    expect(copied, contains('0 mistakes · 0 hints'));
+    expect(copied, contains('🔥 2 days in a row'));
+  });
+
+  testWidgets('the practice list has no share button', (tester) async {
+    phone(tester);
+    await tester.pumpWidget(
+      testApp(SolveScreen(puzzle: warmUp, recordProgress: false)),
+    );
+    expect(find.byKey(const Key('share-result')), findsNothing);
   });
 }

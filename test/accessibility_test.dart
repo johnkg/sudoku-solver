@@ -126,6 +126,12 @@ void main() {
             expect(tester.takeException(), isNull, reason: tab);
           }
 
+          await tester.tap(find.byTooltip('Progress options'));
+          await tester.pumpAndSettle();
+          await tester.tap(find.text('Statistics'));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: 'statistics');
+
           await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: 'solve screen');

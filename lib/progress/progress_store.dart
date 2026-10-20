@@ -170,6 +170,25 @@ class ProgressStore extends ChangeNotifier {
   /// Every practice result, by puzzle id.
   Map<String, PuzzleRecord> get records => Map.unmodifiable(_records);
 
+  /// Every daily result, by day such as `2026-10-10`.
+  Map<String, PuzzleRecord> get dailyRecords => Map.unmodifiable(_daily);
+
+  /// The longest run of days in a row with the daily puzzle solved.
+  int get bestDailyStreak {
+    final days = [for (final key in _daily.keys) ?DateTime.tryParse(key)]
+      ..sort();
+    var best = 0;
+    var run = 0;
+    DateTime? previous;
+    for (final day in days) {
+      final yesterday = DateTime(day.year, day.month, day.day - 1);
+      run = previous == yesterday ? run + 1 : 1;
+      if (run > best) best = run;
+      previous = day;
+    }
+    return best;
+  }
+
   /// How the player has done at each technique, by [Technique.name]. Only
   /// techniques they have been asked about appear.
   Map<String, TechniqueStat> get techniqueStats =>

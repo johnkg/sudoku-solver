@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../engine/engine.dart' show Technique;
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart' show ProgressStore;
+import 'achievements.dart';
+import 'daily_calendar.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'solve_screen.dart' show formatClock;
@@ -87,6 +89,37 @@ class StatsScreen extends StatelessWidget {
                 ],
               ),
               ..._techniqueSection(context, store),
+              Padding(
+                padding: const EdgeInsets.only(top: 20, bottom: 8),
+                child: Text(
+                  'Daily puzzles',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              Card(
+                key: const Key('daily-calendar'),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      DailyCalendar(
+                        solved: store.dailyRecords.keys.toSet(),
+                        today: store.today,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Current streak ${store.dailyStreak} · '
+                        'Best ${store.bestDailyStreak}',
+                        key: const Key('streak-line'),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              ..._achievementSection(context, store),
               Padding(
                 padding: const EdgeInsets.only(top: 20, bottom: 8),
                 child: Text(
@@ -226,6 +259,56 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
               ),
             ),
           ],
+        ),
+      ),
+  ];
+}
+
+/// Everything there is to earn, with how far along the player is.
+List<Widget> _achievementSection(BuildContext context, ProgressStore store) {
+  final theme = Theme.of(context);
+  final all = achievementsFor(store);
+  final earned = all.where((a) => a.unlocked).length;
+
+  return [
+    Padding(
+      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      child: Text(
+        'Achievements · $earned of ${all.length}',
+        key: const Key('achievements-title'),
+        style: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ),
+    for (final a in all)
+      Card(
+        key: Key('achievement-${a.id}'),
+        color: a.unlocked ? theme.colorScheme.primaryContainer : null,
+        child: ListTile(
+          leading: Icon(
+            a.unlocked ? Icons.emoji_events : a.icon,
+            color: a.unlocked
+                ? theme.colorScheme.onPrimaryContainer
+                : theme.colorScheme.outline,
+          ),
+          title: Text(a.title),
+          subtitle: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(a.description),
+              if (!a.unlocked && a.goal > 1) ...[
+                const SizedBox(height: 6),
+                LinearProgressIndicator(value: a.progress / a.goal),
+                const SizedBox(height: 2),
+                Text(
+                  '${a.progress} of ${a.goal}',
+                  style: theme.textTheme.labelSmall,
+                ),
+              ],
+            ],
+          ),
+          trailing: a.unlocked ? const Icon(Icons.check_circle) : null,
         ),
       ),
   ];
