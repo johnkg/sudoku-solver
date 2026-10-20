@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../engine/engine.dart';
 import '../scan/photo_scan.dart';
 import '../scan/scan_result.dart';
+import 'puzzle_link.dart';
 import 'board_view.dart';
 import 'puzzle_library.dart';
 import 'solve_screen.dart';
@@ -22,7 +23,14 @@ List<int>? parsePuzzleText(String text) {
 /// A blank grid to type any puzzle into, then a button to be taught how to
 /// solve it.
 class SolverTab extends StatefulWidget {
-  const SolverTab({super.key, this.scanner});
+  const SolverTab({super.key, this.scanner, this.initialCells, this.baseUri});
+
+  /// Digits to start with, such as from a shared link.
+  final List<int>? initialCells;
+
+  /// The page's address, which share links are built from. Defaults to the
+  /// browser's current address.
+  final Uri? baseUri;
 
   /// Reads a puzzle from a photo. Defaults to the browser's reader where one
   /// exists; tests pass their own.
@@ -39,7 +47,17 @@ class _SolverTabState extends State<SolverTab> {
 
   /// Cells read from a photo that the reader was unsure about.
   Set<int> doubtful = {};
-  String? scanNote;
+  String? note;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialCells;
+    if (initial != null) {
+      cells.setAll(0, initial);
+      note = 'Loaded the puzzle from the link.';
+    }
+  }
 
   @override
   void dispose() {
@@ -61,7 +79,7 @@ class _SolverTabState extends State<SolverTab> {
     setState(() {
       cells[cell] = digit;
       doubtful.remove(cell);
-      scanNote = null;
+      note = null;
     });
   }
 
@@ -122,7 +140,7 @@ class _SolverTabState extends State<SolverTab> {
       cells.fillRange(0, 81, 0);
       selected = null;
       doubtful = {};
-      scanNote = null;
+      note = null;
     });
   }
 
@@ -137,7 +155,7 @@ class _SolverTabState extends State<SolverTab> {
       cells.setAll(0, parsed);
       selected = null;
       doubtful = {};
-      scanNote = null;
+      note = null;
     });
   }
 
@@ -185,7 +203,7 @@ class _SolverTabState extends State<SolverTab> {
       cells.setAll(0, parsed);
       selected = null;
       doubtful = {...result!.uncertain};
-      scanNote = doubtful.isEmpty
+      note = doubtful.isEmpty
           ? 'Read $found digits. Check each one against your photo.'
           : 'Read $found digits. The tinted cells are ones I was unsure '
                 'about. Check every digit against your photo.';
@@ -234,6 +252,12 @@ class _SolverTabState extends State<SolverTab> {
     await Navigator.of(context).push(
       MaterialPageRoute<void>(builder: (_) => WalkthroughScreen(start: board)),
     );
+  }
+
+  Future<void> _copyLink() async {
+    final link = puzzleLink(widget.baseUri ?? Uri.base, cells);
+    await Clipboard.setData(ClipboardData(text: link.toString()));
+    if (mounted) _say('Link copied. Anyone who opens it gets this puzzle.');
   }
 
   /// Opens the entered puzzle in the normal solve screen, with notes, hints
@@ -295,7 +319,7 @@ class _SolverTabState extends State<SolverTab> {
     final status = bad.isNotEmpty
         ? 'Red digits break a rule: the same digit twice in a row, column or '
               'box.'
-        : scanNote ??
+        : note ??
               (filled == 0
                   ? 'Tap a cell, then a digit, to type in your puzzle.'
                   : '$filled digit${filled == 1 ? '' : 's'} entered.');
@@ -370,6 +394,13 @@ class _SolverTabState extends State<SolverTab> {
             label: const Text('Scan from a photo'),
           ),
         ],
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const Key('copy-link'),
+          onPressed: filled == 0 || bad.isNotEmpty ? null : _copyLink,
+          icon: const Icon(Icons.link),
+          label: const Text('Copy a link to this puzzle'),
+        ),
         const SizedBox(height: 12),
         FilledButton.icon(
           key: const Key('teach-me'),

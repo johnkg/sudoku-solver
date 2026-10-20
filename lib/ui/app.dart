@@ -8,9 +8,12 @@ import 'solver_tab.dart';
 import 'stats_screen.dart';
 
 class SudokuApp extends StatelessWidget {
-  const SudokuApp({super.key, required this.store});
+  const SudokuApp({super.key, required this.store, this.initialPuzzle});
 
   final ProgressStore store;
+
+  /// A puzzle from a shared link. The app opens on the Solver tab with it.
+  final List<int>? initialPuzzle;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +40,7 @@ class SudokuApp extends StatelessWidget {
         debugShowCheckedModeBanner: false,
         theme: theme(Brightness.light),
         darkTheme: theme(Brightness.dark),
-        home: const AppShell(),
+        home: AppShell(initialPuzzle: initialPuzzle),
       ),
     );
   }
@@ -47,14 +50,16 @@ enum _MenuAction { stats, unlockAll, reset }
 
 /// Two tabs: lessons to learn from, puzzles to practise on.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key});
+  const AppShell({super.key, this.initialPuzzle});
+
+  final List<int>? initialPuzzle;
 
   @override
   State<AppShell> createState() => _AppShellState();
 }
 
 class _AppShellState extends State<AppShell> {
-  int index = 0;
+  late int index = widget.initialPuzzle == null ? 0 : 2;
 
   Future<void> _onMenu(_MenuAction action) async {
     final store = ProgressScope.read(context);
@@ -120,7 +125,11 @@ class _AppShellState extends State<AppShell> {
       ),
       body: IndexedStack(
         index: index,
-        children: const [LearnTab(), PracticeTab(), SolverTab()],
+        children: [
+          const LearnTab(),
+          const PracticeTab(),
+          SolverTab(initialCells: widget.initialPuzzle),
+        ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
