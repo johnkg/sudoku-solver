@@ -5,6 +5,8 @@ import '../engine/engine.dart';
 import '../scan/photo_scan.dart';
 import '../scan/scan_result.dart';
 import 'board_view.dart';
+import 'puzzle_library.dart';
+import 'solve_screen.dart';
 import 'walkthrough_screen.dart';
 
 /// Turns text into 81 cells, or null if it is not a puzzle. Digits are
@@ -234,6 +236,38 @@ class _SolverTabState extends State<SolverTab> {
     );
   }
 
+  /// Opens the entered puzzle in the normal solve screen, with notes, hints
+  /// and a clock. Needs exactly one solution so mistakes can be told apart.
+  Future<void> _play() async {
+    if (filled == 0) return _say('Enter a puzzle first.');
+    if (clashing.isNotEmpty) return _say('Fix the red digits first.');
+
+    final board = Board.parse(cells.map((v) => '$v').join());
+    final solutions = countSolutions(board);
+    if (solutions == 0) {
+      return _say('This puzzle has no solution. Check the digits you entered.');
+    }
+    if (solutions > 1) {
+      return _say(
+        'To play it, the puzzle needs exactly one solution. Check that every '
+        'given is entered.',
+      );
+    }
+
+    final rating = ratePuzzle(board);
+    final entry = PuzzleEntry(
+      id: 'custom',
+      title: 'My puzzle',
+      text: board.toLine().replaceAll('.', '0'),
+      technique: rating.required ?? Technique.values.last,
+    );
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => SolveScreen(puzzle: entry, recordProgress: false),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -343,6 +377,14 @@ class _SolverTabState extends State<SolverTab> {
           onPressed: _teach,
           icon: const Icon(Icons.school),
           label: const Text('Teach me how to solve it'),
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: const Key('play-it'),
+          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
+          onPressed: _play,
+          icon: const Icon(Icons.play_arrow),
+          label: const Text('Play this puzzle myself'),
         ),
       ],
     );

@@ -245,4 +245,52 @@ void main() {
       expect(find.byKey(const Key('scan-photo')), findsNothing);
     });
   });
+
+  group('playing the entered puzzle', () {
+    testWidgets('opens the solve screen on the entered puzzle', (tester) async {
+      await openSolver(tester);
+      await paste(tester, warmUp.text);
+      await tester.tap(find.byKey(const Key('play-it')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('My puzzle'), findsOneWidget);
+      expect(find.byKey(const Key('digit-5')), findsOneWidget);
+      expect(find.byTooltip('Get a hint'), findsOneWidget);
+    });
+
+    testWidgets('needs one solution', (tester) async {
+      await openSolver(tester);
+      await paste(tester, '1${'.' * 80}');
+      await tester.tap(find.byKey(const Key('play-it')));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('exactly one solution'), findsOneWidget);
+      expect(find.text('My puzzle'), findsNothing);
+    });
+
+    testWidgets('asks for a puzzle and rejects clashes', (tester) async {
+      await openSolver(tester);
+      await tester.tap(find.byKey(const Key('play-it')));
+      await tester.pump();
+      expect(find.text('Enter a puzzle first.'), findsOneWidget);
+
+      await paste(tester, '11${'.' * 79}');
+      await tester.tap(find.byKey(const Key('play-it')));
+      await tester.pumpAndSettle();
+      expect(find.text('Fix the red digits first.'), findsOneWidget);
+    });
+
+    testWidgets('does not save progress for it', (tester) async {
+      final store = ProgressStore.memory();
+      phoneSize(tester);
+      await tester.pumpWidget(SudokuApp(store: store));
+      await tester.tap(find.text('Solver'));
+      await tester.pumpAndSettle();
+      await paste(tester, warmUp.text);
+      await tester.tap(find.byKey(const Key('play-it')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('digit-5')));
+      await tester.pump();
+      expect(store.hasSavedGame('custom'), isFalse);
+    });
+  });
 }
