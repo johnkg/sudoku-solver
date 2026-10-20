@@ -890,7 +890,7 @@ class _StepPanel extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             'This puzzle needs something beyond the Level 5 techniques the '
-            'solver knows (for example chains). Try undoing a step or '
+            'solver knows (for example forcing chains). Try undoing a step or '
             'starting over.',
             style: theme.textTheme.bodyLarge,
           ),
