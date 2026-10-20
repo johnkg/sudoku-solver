@@ -2,6 +2,7 @@ import 'package:flutter/material.dart' hide Step;
 
 import '../engine/engine.dart';
 import '../lessons/lessons.dart';
+import '../progress/progress_scope.dart';
 import 'board_view.dart';
 import 'learn_tab.dart';
 import 'link_legend.dart';
@@ -100,6 +101,8 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
   });
 
   void _found() {
+    ProgressScope.read(context)
+        .recordTechnique(steps[index].technique.name, right: !missed);
     askedSteps.add(index);
     if (!missed) firstTry.add(index);
     revealedSteps.add(index);
@@ -109,6 +112,8 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
   }
 
   void _showMe() => setState(() {
+    ProgressScope.read(context)
+        .recordTechnique(steps[index].technique.name, right: false);
     askedSteps.add(index);
     revealedSteps.add(index);
     selected = null;

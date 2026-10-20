@@ -49,6 +49,24 @@ class PuzzleRecord {
   };
 }
 
+/// How often the player got a technique right when asked to spot or apply it.
+class TechniqueStat {
+  const TechniqueStat(this.right, this.wrong);
+
+  factory TechniqueStat.fromJson(Map<String, Object?> json) =>
+      TechniqueStat(json['right']! as int, json['wrong']! as int);
+
+  final int right;
+  final int wrong;
+
+  int get attempts => right + wrong;
+
+  /// Share of attempts that went right, 1 when there are none yet.
+  double get accuracy => attempts == 0 ? 1 : right / attempts;
+
+  Map<String, Object?> toJson() => {'right': right, 'wrong': wrong};
+}
+
 /// What the player has done: puzzles solved, games in progress, and whether
 /// they skipped the unlocking. Saved to the device when constructed with
 /// [load]; [ProgressStore.memory] keeps everything in memory (for tests).
@@ -62,6 +80,7 @@ class ProgressStore extends ChangeNotifier {
       _now = now ?? DateTime.now;
 
   static const _recordsKey = 'progress.records';
+  static const _techniquesKey = 'progress.techniques';
   static const _unlockAllKey = 'progress.unlockAll';
   static const _gamePrefix = 'progress.game.';
   static const _dailyKey = 'progress.daily';
@@ -84,6 +103,7 @@ class ProgressStore extends ChangeNotifier {
   final Map<String, PuzzleRecord> _daily = {};
   final Map<String, String> _dailyPuzzles = {};
   final Map<String, PuzzleRecord> _records = {};
+  final Map<String, TechniqueStat> _techniques = {};
   final Map<String, Map<String, Object?>> _games = {};
   bool _unlockAll = false;
 
@@ -99,6 +119,16 @@ class ProgressStore extends ChangeNotifier {
       }
     } on Object {
       _records.clear();
+    }
+    try {
+      final saved = jsonDecode(prefs.getString(_techniquesKey) ?? '{}');
+      for (final entry in (saved as Map<String, Object?>).entries) {
+        _techniques[entry.key] = TechniqueStat.fromJson(
+          entry.value! as Map<String, Object?>,
+        );
+      }
+    } on Object {
+      _techniques.clear();
     }
     try {
       final saved = jsonDecode(prefs.getString(_dailyKey) ?? '{}');
@@ -139,6 +169,28 @@ class ProgressStore extends ChangeNotifier {
 
   /// Every practice result, by puzzle id.
   Map<String, PuzzleRecord> get records => Map.unmodifiable(_records);
+
+  /// How the player has done at each technique, by [Technique.name]. Only
+  /// techniques they have been asked about appear.
+  Map<String, TechniqueStat> get techniqueStats =>
+      Map.unmodifiable(_techniques);
+
+  /// Notes one try at the technique called [name]: spotted or applied right,
+  /// or got wrong or needed help with.
+  void recordTechnique(String name, {required bool right}) {
+    final old = _techniques[name] ?? const TechniqueStat(0, 0);
+    _techniques[name] = TechniqueStat(
+      old.right + (right ? 1 : 0),
+      old.wrong + (right ? 0 : 1),
+    );
+    _prefs?.setString(
+      _techniquesKey,
+      jsonEncode({
+        for (final e in _techniques.entries) e.key: e.value.toJson(),
+      }),
+    );
+    notifyListeners();
+  }
 
   /// How many daily puzzles the player has solved.
   int get dailySolvedCount => _daily.length;
@@ -278,6 +330,7 @@ class ProgressStore extends ChangeNotifier {
   /// unlock-all skip.
   void reset() {
     _records.clear();
+    _techniques.clear();
     _games.clear();
     _daily.clear();
     _dailyPuzzles.clear();
@@ -285,6 +338,7 @@ class ProgressStore extends ChangeNotifier {
     final prefs = _prefs;
     if (prefs != null) {
       prefs.remove(_recordsKey);
+      prefs.remove(_techniquesKey);
       prefs.remove(_unlockAllKey);
       prefs.remove(_dailyKey);
       for (final key in prefs.getKeys().toList()) {
