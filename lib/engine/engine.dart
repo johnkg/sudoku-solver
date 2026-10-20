@@ -7,6 +7,7 @@ export 'puzzle_finder.dart';
 export 'rater.dart';
 export 'solver.dart';
 export 'step.dart';
+export 'techniques/chains.dart';
 export 'techniques/coloring.dart';
 export 'techniques/fish.dart';
 export 'techniques/full_house.dart';

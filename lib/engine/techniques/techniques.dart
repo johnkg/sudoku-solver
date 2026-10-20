@@ -1,3 +1,4 @@
+import 'chains.dart';
 import 'full_house.dart';
 import 'hidden_single.dart';
 import 'coloring.dart';
@@ -10,9 +11,9 @@ import 'technique.dart';
 import 'uniqueness.dart';
 import 'wings.dart';
 
-/// All implemented techniques, easiest first. The solver always tries them in
-/// this order.
-const List<SolvingTechnique> defaultTechniques = [
+/// The techniques the app had before chains. The daily puzzle is rated with
+/// these, so it does not change for players when techniques are added.
+const List<SolvingTechnique> legacyTechniques = [
   FullHouse(),
   NakedSingle(),
   HiddenSingle(),
@@ -33,4 +34,12 @@ const List<SolvingTechnique> defaultTechniques = [
   WWing(),
   SimpleColoring(),
   Fish(4),
+];
+
+/// All implemented techniques, easiest first. The solver always tries them in
+/// this order.
+const List<SolvingTechnique> defaultTechniques = [
+  ...legacyTechniques,
+  XChain(),
+  XYChain(),
 ];

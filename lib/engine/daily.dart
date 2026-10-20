@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'puzzle_finder.dart';
+import 'techniques/techniques.dart';
 
 /// A small random number generator that gives the same numbers on every
 /// device and every Dart version, which `Random(seed)` does not promise. The
@@ -60,6 +61,7 @@ Future<FoundPuzzle?> findDailyPuzzle(
   dailyLevel(date),
   SeededRandom(dailySeed(date)),
   maxAttempts: 20000,
+  techniques: legacyTechniques,
   isCancelled: isCancelled,
   yieldTurn: yieldTurn,
 );

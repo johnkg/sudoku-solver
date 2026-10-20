@@ -4,6 +4,7 @@ import '../engine/engine.dart';
 import '../lessons/lessons.dart';
 import 'board_view.dart';
 import 'learn_tab.dart';
+import 'link_legend.dart';
 import 'levels.dart';
 import 'step_text.dart';
 import 'technique_choices.dart';
@@ -318,6 +319,7 @@ class _StepPanel extends StatelessWidget {
         TechniqueLink(technique: step.technique),
         const SizedBox(height: 12),
         Text(step.explanation, style: theme.textTheme.bodyLarge),
+        LinkLegend(step: step),
         const SizedBox(height: 12),
         Card(
           color: theme.colorScheme.secondaryContainer,

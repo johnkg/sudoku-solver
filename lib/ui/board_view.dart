@@ -318,6 +318,45 @@ class _BoardPainter extends CustomPainter {
         );
       }
     }
+    _drawLinks(canvas, cell);
+  }
+
+  /// Where digit [digit]'s pencil mark sits inside [cell]'s square.
+  Offset _markCenter(int cell, int digit, double size) => Offset(
+    Board.columnOf(cell) * size + size * ((digit - 1) % 3 + 0.5) / 3,
+    Board.rowOf(cell) * size + size * ((digit - 1) ~/ 3 + 0.5) / 3,
+  );
+
+  /// The links of the step's pattern, drawn between the pencil marks they are
+  /// about: solid for strong links, dashed for weak ones.
+  void _drawLinks(Canvas canvas, double cell) {
+    for (final link in step?.links ?? const <ChainLink>[]) {
+      final from = _markCenter(link.from, link.digit, cell);
+      final to = _markCenter(link.to, link.digit, cell);
+      final color = (link.strong ? scheme.primary : scheme.tertiary).withValues(
+        alpha: 0.9,
+      );
+      final line = Paint()
+        ..color = color
+        ..strokeWidth = link.strong ? 3 : 2
+        ..strokeCap = StrokeCap.round;
+      if (link.strong) {
+        canvas.drawLine(from, to, line);
+      } else {
+        final length = (to - from).distance;
+        final direction = (to - from) / length;
+        for (var d = 0.0; d < length; d += 9) {
+          canvas.drawLine(
+            from + direction * d,
+            from + direction * (d + 5 < length ? d + 5 : length),
+            line,
+          );
+        }
+      }
+      for (final end in [from, to]) {
+        canvas.drawCircle(end, 3.5, Paint()..color = color);
+      }
+    }
   }
 
   /// Thin diagonal lines across [rect], so a state shows without relying on

@@ -4,6 +4,8 @@ import 'dart:math';
 import 'board.dart';
 import 'generator.dart';
 import 'rater.dart';
+import 'techniques/technique.dart';
+import 'techniques/techniques.dart';
 
 /// A puzzle together with how it was rated.
 class FoundPuzzle {
@@ -23,8 +25,8 @@ List<int> _clueFloorsFor(int level) => switch (level) {
   _ => const [0, 0, 24],
 };
 
-/// Generates random puzzles until one rates at exactly [level] (1-5), and
-/// returns it. Returns null after [maxAttempts] tries or once [isCancelled]
+/// Generates random puzzles until one rates at exactly [level] (1-5) using
+/// [techniques], and returns it. Returns null after [maxAttempts] tries or once [isCancelled]
 /// says to stop.
 ///
 /// Generating a puzzle takes tens of milliseconds, so [yieldTurn] runs between
@@ -34,6 +36,7 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
   int level,
   Random random, {
   int maxAttempts = 3000,
+  List<SolvingTechnique> techniques = defaultTechniques,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
 }) async {
@@ -45,7 +48,7 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
       random,
       minClues: floors[random.nextInt(floors.length)],
     );
-    final rating = ratePuzzle(puzzle);
+    final rating = ratePuzzle(puzzle, techniques: techniques);
     if (rating.level == level) return FoundPuzzle(puzzle, rating);
 
     await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));

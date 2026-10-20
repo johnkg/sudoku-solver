@@ -19,7 +19,9 @@ enum Technique {
   uniqueRectangle(5, 'Unique Rectangle'),
   wWing(5, 'W-Wing'),
   simpleColoring(5, 'Simple Coloring'),
-  jellyfish(5, 'Jellyfish');
+  jellyfish(5, 'Jellyfish'),
+  xChain(5, 'X-Chain'),
+  xyChain(5, 'XY-Chain');
 
   const Technique(this.level, this.label);
 
@@ -42,6 +44,18 @@ class Elimination {
   final List<int> digits;
 }
 
+/// A line the UI draws between two cells of a pattern, for [digit]. A strong
+/// link means exactly one of the two cells holds the digit; a weak link only
+/// means they cannot both hold it.
+class ChainLink {
+  const ChainLink(this.from, this.to, this.digit, {this.strong = false});
+
+  final int from;
+  final int to;
+  final int digit;
+  final bool strong;
+}
+
 /// One logical move: what technique found it, what it changes, and why.
 class Step {
   const Step({
@@ -51,6 +65,7 @@ class Step {
     this.eliminations = const [],
     this.highlightCells = const [],
     this.highlightDigits = const [],
+    this.links = const [],
   });
 
   final Technique technique;
@@ -61,4 +76,7 @@ class Step {
   /// Cells forming the pattern, for the UI to draw.
   final List<int> highlightCells;
   final List<int> highlightDigits;
+
+  /// Lines to draw between cells of the pattern.
+  final List<ChainLink> links;
 }

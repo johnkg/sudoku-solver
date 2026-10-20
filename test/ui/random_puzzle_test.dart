@@ -4,6 +4,7 @@ import 'package:sudoku_solver/engine/engine.dart';
 import 'package:sudoku_solver/progress/progress_store.dart';
 import 'package:sudoku_solver/ui/app.dart';
 import 'package:sudoku_solver/ui/board_view.dart';
+import 'package:sudoku_solver/ui/random_puzzle.dart';
 import 'package:sudoku_solver/ui/solve_screen.dart';
 
 import '../support.dart';
@@ -91,7 +92,15 @@ void main() {
       tester,
     ) async {
       phone(tester);
-      // Level 5 takes long enough to cancel while the dialog is up.
+      // A search that only ends when cancelled, so the dialog stays up.
+      final original = randomPuzzleFinder;
+      randomPuzzleFinder = (level, random, {isCancelled}) async {
+        while (!(isCancelled?.call() ?? false)) {
+          await Future<void>.delayed(const Duration(milliseconds: 10));
+        }
+        return null;
+      };
+      addTearDown(() => randomPuzzleFinder = original);
       await openPractice(tester, ProgressStore.memory()..unlockAllLevels());
       await tester.tap(find.widgetWithText(ChoiceChip, 'Level 5'));
       await tester.pump();
