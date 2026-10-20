@@ -59,9 +59,6 @@ class SolveController extends ChangeNotifier {
   EntryMode mode = EntryMode.place;
   int mistakes = 0;
 
-  /// Mistakes the player may make before the game offers to start over.
-  static const maxMistakes = 3;
-
   /// Seconds spent on this puzzle. Only changes through [tick].
   final ValueNotifier<int> seconds = ValueNotifier(0);
 

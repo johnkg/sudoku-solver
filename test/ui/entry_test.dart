@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Step;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:sudoku_solver/settings/settings.dart';
 
 import '../support.dart';
 
@@ -368,6 +369,55 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
         '1/3',
       );
+    });
+
+    testWidgets('the mistake limit setting changes when it fires', (
+      tester,
+    ) async {
+      bigScreen(tester);
+      final settings = Settings.memory()..mistakeLimit = 5;
+      await tester.pumpWidget(
+        testApp(SolveScreen(puzzle: warmUp), settings: settings),
+      );
+      await tapCell(tester, cell);
+      for (var i = 0; i < 3; i++) {
+        await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsNothing);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
+        '3/5',
+      );
+    });
+
+    testWidgets('no limit means no dialog and no cap shown', (tester) async {
+      bigScreen(tester);
+      final settings = Settings.memory()..mistakeLimit = 0;
+      await tester.pumpWidget(
+        testApp(SolveScreen(puzzle: warmUp), settings: settings),
+      );
+      await tapCell(tester, cell);
+      for (var i = 0; i < 4; i++) {
+        await tester.tap(find.byKey(Key('digit-$wrongButLegal')));
+        await tester.pump();
+      }
+      await tester.pumpAndSettle();
+      expect(find.text('Out of mistakes'), findsNothing);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('mistakes-value'))).data,
+        '4',
+      );
+    });
+
+    testWidgets('the clock can be hidden', (tester) async {
+      bigScreen(tester);
+      final settings = Settings.memory()..showClock = false;
+      await tester.pumpWidget(
+        testApp(SolveScreen(puzzle: warmUp), settings: settings),
+      );
+      expect(find.byKey(const Key('time-value')), findsNothing);
     });
 
     testWidgets('three mistakes offer to start over', (tester) async {
