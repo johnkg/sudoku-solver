@@ -77,6 +77,11 @@ class Fish extends SolvingTechnique {
         eliminations: eliminations,
         highlightCells: [for (final b in bases) ...spots[b]!],
         highlightDigits: [digit],
+        links: [
+          for (final b in bases)
+            if (spots[b]!.length == 2)
+              ChainLink(spots[b]![0], spots[b]![1], digit, strong: true),
+        ],
         explanation:
             '$_name on $digit: in ${names(baseLabel, bases)}, the digit '
             '$digit can only go in ${names(coverLabel, covers)}. Those $size '

@@ -12,5 +12,5 @@ const levelBlurbs = {
   2: 'Digits locked into a line or a box.',
   3: 'Groups of cells that share a group of digits.',
   4: 'Patterns that span several rows and columns.',
-  5: 'Wings, colours and uniqueness.',
+  5: 'Wings, colours, chains and uniqueness.',
 };

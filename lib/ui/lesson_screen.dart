@@ -4,6 +4,7 @@ import '../engine/engine.dart';
 import '../lessons/lessons.dart';
 import 'board_view.dart';
 import 'levels.dart';
+import 'link_legend.dart';
 import 'puzzle_library.dart';
 import 'quiz_screen.dart';
 import 'solve_screen.dart';
@@ -78,6 +79,7 @@ class _LessonScreenState extends State<LessonScreen> {
           view == _View.before ? step.explanation : describeResult(step),
           style: theme.textTheme.bodyLarge,
         ),
+        if (view == _View.before) LinkLegend(step: step),
       ],
     );
 

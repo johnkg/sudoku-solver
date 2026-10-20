@@ -253,4 +253,28 @@ const puzzleLibrary = [
     text: '700503190000007025200000000030000900024700000000900053605801000000060080007000000',
     technique: Technique.jellyfish,
   ),
+  PuzzleEntry(
+    id: 'xChain',
+    title: 'Follow the chain',
+    text: '009700050000000060038009002000076009000800503000304200600000000004903000007060835',
+    technique: Technique.xChain,
+  ),
+  PuzzleEntry(
+    id: 'xChain-2',
+    title: 'X-Chain practice 2',
+    text: '105038000083000000670001080000000604009000173300060005000050010050002007002083000',
+    technique: Technique.xChain,
+  ),
+  PuzzleEntry(
+    id: 'xyChain',
+    title: 'Two at a time',
+    text: '300000400010400600040200970194000720050000090008000000000630280000070064900080000',
+    technique: Technique.xyChain,
+  ),
+  PuzzleEntry(
+    id: 'xyChain-2',
+    title: 'XY-Chain practice 2',
+    text: '059010000800027060600500000070608400000300000200090080540000009080000076006200000',
+    technique: Technique.xyChain,
+  ),
 ];

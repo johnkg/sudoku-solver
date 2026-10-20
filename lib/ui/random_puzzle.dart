@@ -8,6 +8,17 @@ import 'puzzle_library.dart';
 import 'search_dialog.dart';
 import 'solve_screen.dart';
 
+/// The search that finds a puzzle of a level. Tests replace it, for example
+/// with one that never finishes, to test cancelling.
+@visibleForTesting
+Future<FoundPuzzle?> Function(
+  int level,
+  Random random, {
+  bool Function()? isCancelled,
+})
+randomPuzzleFinder = (level, random, {isCancelled}) =>
+    findPuzzleOfLevel(level, random, isCancelled: isCancelled);
+
 /// Looks for a random puzzle at [level] while a dialog shows progress, then
 /// opens it. With [replace] the current screen is swapped for the new puzzle,
 /// which is what "new random puzzle" does.
@@ -24,7 +35,7 @@ Future<void> playRandomPuzzle(
     context,
     message: 'Looking for a Level $level puzzle…',
     search: (isCancelled) =>
-        findPuzzleOfLevel(level, Random(), isCancelled: isCancelled),
+        randomPuzzleFinder(level, Random(), isCancelled: isCancelled),
   );
   if (found == null) return;
 

@@ -398,6 +398,52 @@ final List<Lesson> lessons = [
       });
     },
   ),
+  Lesson(
+    technique: Technique.xChain,
+    tagline: 'A chain of links for one digit',
+    idea:
+        'Pick a digit and follow its links. A strong link joins two cells '
+        'where exactly one holds the digit (it fits nowhere else in a row, '
+        'column or box). A weak link joins two cells that see each other, so '
+        'not both can hold it. Start and end the chain on a strong link and '
+        'alternate. If the first cell is wrong the whole chain flips along, '
+        'and the last cell is right. So one of the two ends holds the digit, '
+        'and any cell that sees both ends cannot.',
+    spot:
+        'Pick a digit and mark every pair of cells that are its only two '
+        'places in a unit. Look for pairs you can connect by a cell that '
+        'sees the next pair. When the two ends of such a chain both see a '
+        'cell, remove the digit from it.',
+    buildExample: () => _candidates({
+      for (var c = 0; c < 9; c++)
+        if (c != 1 && c != 5) c: _noOne,
+      for (var c = 0; c < 9; c++)
+        if (c != 5 && c != 7) 18 + c: _noOne,
+      for (var c = 0; c < 9; c++)
+        if (c != 7 && c != 2) 36 + c: _noOne,
+    }),
+  ),
+  Lesson(
+    technique: Technique.xyChain,
+    tagline: 'A chain of two-candidate cells',
+    idea:
+        'Link cells that each hold just two candidates, where neighbours in '
+        'the chain see each other and share a digit. If the first cell is '
+        'not X it must be its other digit, which forces the next cell, and '
+        'so on down the chain. A chain whose last cell also holds X ends up '
+        'forcing X there. So one of the two ends is X, and any cell that '
+        'sees both ends cannot be X. A Y-Wing is the shortest such chain.',
+    spot:
+        'Mark the cells with exactly two candidates. Start from one, pick a '
+        'digit X, and walk to a neighbour that has the other digit, then on '
+        'to its other digit, until a cell holds X again.',
+    buildExample: () => _candidates({
+      0: [1, 2],
+      4: [2, 3],
+      40: [3, 4],
+      36: [4, 1],
+    }),
+  ),
 ];
 
 Lesson lessonFor(Technique technique) =>

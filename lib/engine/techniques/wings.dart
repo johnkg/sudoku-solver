@@ -51,6 +51,7 @@ class YWing extends SolvingTechnique {
             eliminations: eliminations,
             highlightCells: [pivot, first, second],
             highlightDigits: [a, b, c],
+            links: [ChainLink(pivot, first, a), ChainLink(pivot, second, b)],
             explanation:
                 'Y-Wing: pivot ${Board.cellName(pivot)} holds $a or $b. '
                 'If it is $a, then ${Board.cellName(first)} becomes $c. '
@@ -114,6 +115,7 @@ class XYZWing extends SolvingTechnique {
           eliminations: eliminations,
           highlightCells: [pivot, ...pair],
           highlightDigits: [x, y, z],
+          links: [ChainLink(pivot, pair[0], x), ChainLink(pivot, pair[1], y)],
           explanation:
               'XYZ-Wing: pivot ${Board.cellName(pivot)} holds $x, $y or $z. '
               '${Board.cellName(pair[0])} holds $x or $z, and '
@@ -177,6 +179,11 @@ class WWing extends SolvingTechnique {
               eliminations: eliminations,
               highlightCells: [x, end1, end2, y],
               highlightDigits: [a, b],
+              links: [
+                ChainLink(x, end1, a),
+                ChainLink(end1, end2, a, strong: true),
+                ChainLink(end2, y, a),
+              ],
               explanation:
                   'W-Wing: ${Board.cellName(x)} and ${Board.cellName(y)} both '
                   'hold only $a or $b. In the unit joining '

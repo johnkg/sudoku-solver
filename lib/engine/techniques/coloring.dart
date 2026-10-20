@@ -74,6 +74,11 @@ class Skyscraper extends SolvingTechnique {
           eliminations: eliminations,
           highlightCells: [...baseCells, roof1, roof2],
           highlightDigits: [digit],
+          links: [
+            ChainLink(roof1, baseCells[0], digit, strong: true),
+            ChainLink(baseCells[0], baseCells[1], digit),
+            ChainLink(baseCells[1], roof2, digit, strong: true),
+          ],
           explanation:
               'Skyscraper on $digit: ${lines[i].name} and ${lines[j].name} '
               'each have $digit in only two cells ($kind), and '
@@ -147,6 +152,11 @@ class SimpleColoring extends SolvingTechnique {
         ],
       ];
       final names = ['blue', 'green'];
+      final links = [
+        for (final cell in chain)
+          for (final other in neighbours[cell]!)
+            if (cell < other) ChainLink(cell, other, digit, strong: true),
+      ];
 
       for (var k = 0; k < 2; k++) {
         final clash = combinations(
@@ -161,6 +171,7 @@ class SimpleColoring extends SolvingTechnique {
           ],
           highlightCells: chain,
           highlightDigits: [digit],
+          links: links,
           explanation:
               'Simple Coloring on $digit: the strong links join '
               '${joinCells(chain)} into a chain, coloured '
@@ -188,6 +199,7 @@ class SimpleColoring extends SolvingTechnique {
           eliminations: eliminations,
           highlightCells: chain,
           highlightDigits: [digit],
+          links: links,
           explanation:
               'Simple Coloring on $digit: the strong links join '
               '${joinCells(chain)} into a chain, coloured '
