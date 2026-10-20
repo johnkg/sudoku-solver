@@ -38,6 +38,16 @@ class SettingsScreen extends StatelessWidget {
                 value: settings.showClock,
                 onChanged: (v) => settings.showClock = v,
               ),
+              SwitchListTile(
+                key: const Key('setting-patterns'),
+                title: const Text('Extra markings'),
+                subtitle: const Text(
+                  'Mark mistakes and hints with hatching and outlines, not '
+                  'only colour. Helps if reds and greens look alike.',
+                ),
+                value: settings.patterns,
+                onChanged: (v) => settings.patterns = v,
+              ),
               ListTile(
                 title: const Text('Mistake limit'),
                 subtitle: const Padding(

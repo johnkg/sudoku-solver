@@ -132,7 +132,9 @@ class _SolveScreenState extends State<SolveScreen>
       settings.haptic(HapticFeedback.heavyImpact);
     } else if (controller.completedSerial != _seenCompleted) {
       settings.haptic(HapticFeedback.mediumImpact);
-      if (!controller.solved) _flash.forward(from: 0);
+      if (!controller.solved && !MediaQuery.disableAnimationsOf(context)) {
+        _flash.forward(from: 0);
+      }
     } else if (controller.moveCount > _seenMoves) {
       settings.haptic(HapticFeedback.selectionClick);
     }

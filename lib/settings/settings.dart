@@ -14,6 +14,7 @@ class Settings extends ChangeNotifier {
     final prefs = settings._prefs!;
     settings._haptics = prefs.getBool(_hapticsKey) ?? true;
     settings._showClock = prefs.getBool(_clockKey) ?? true;
+    settings._patterns = prefs.getBool(_patternsKey) ?? false;
     final limit = prefs.getInt(_limitKey);
     if (mistakeLimits.contains(limit)) settings._mistakeLimit = limit!;
     return settings;
@@ -22,6 +23,7 @@ class Settings extends ChangeNotifier {
   static const _hapticsKey = 'settings.haptics';
   static const _clockKey = 'settings.showClock';
   static const _limitKey = 'settings.mistakeLimit';
+  static const _patternsKey = 'settings.patterns';
 
   /// The mistake limits to choose from. 0 means no limit.
   static const mistakeLimits = [0, 3, 5];
@@ -29,10 +31,15 @@ class Settings extends ChangeNotifier {
   final SharedPreferences? _prefs;
   bool _haptics = true;
   bool _showClock = true;
+  bool _patterns = false;
   int _mistakeLimit = 3;
 
   bool get haptics => _haptics;
   bool get showClock => _showClock;
+
+  /// Whether the board marks mistakes and moves with hatching and outlines as
+  /// well as colour.
+  bool get patterns => _patterns;
 
   /// Mistakes allowed before the game offers to start over. 0 means no limit.
   int get mistakeLimit => _mistakeLimit;
@@ -46,6 +53,12 @@ class Settings extends ChangeNotifier {
   set showClock(bool value) {
     _showClock = value;
     _prefs?.setBool(_clockKey, value);
+    notifyListeners();
+  }
+
+  set patterns(bool value) {
+    _patterns = value;
+    _prefs?.setBool(_patternsKey, value);
     notifyListeners();
   }
 
