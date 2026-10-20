@@ -9,11 +9,13 @@ import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import '../settings/settings.dart';
+import 'achievements.dart';
 import 'board_view.dart';
 import 'hint_ladder.dart';
 import 'learn_tab.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
+import 'share_result.dart';
 import 'solve_controller.dart';
 import 'stars.dart';
 import 'unlocking.dart';
@@ -26,6 +28,7 @@ class SolveScreen extends StatefulWidget {
     this.recordProgress = true,
     this.onNewPuzzle,
     this.dailyKey,
+    this.shareBase,
   });
 
   final PuzzleEntry puzzle;
@@ -40,6 +43,9 @@ class SolveScreen extends StatefulWidget {
   /// Set for the daily puzzle: the day it belongs to, such as `2026-10-10`.
   /// The solve counts towards the streak rather than towards unlocking.
   final String? dailyKey;
+
+  /// The page address share links are built from. Defaults to the browser's.
+  final Uri? shareBase;
 
   @override
   State<SolveScreen> createState() => _SolveScreenState();
@@ -143,6 +149,51 @@ class _SolveScreenState extends State<SolveScreen>
     _seenMoves = controller.moveCount;
   }
 
+  /// Tells the player about achievements this solve earned.
+  void _announce(Set<String> before) {
+    final fresh = [
+      for (final a in achievementsFor(store))
+        if (a.unlocked && !before.contains(a.id)) a.title,
+    ];
+    if (fresh.isEmpty) return;
+    // A snack bar cannot be shown while the screen is rebuilding.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Achievement unlocked: ${fresh.join(', ')}')),
+        );
+    });
+  }
+
+  /// Copies a short summary of today's daily result to share.
+  Future<void> _shareResult() async {
+    final key = widget.dailyKey!;
+    final level = widget.puzzle.level;
+    final text = dailyShareText(
+      date: DateTime.parse(key),
+      level: level,
+      levelName: levelNames[level] ?? '',
+      stars: PuzzleRecord(
+        mistakes: controller.mistakes,
+        hints: controller.hintsUsed,
+      ).stars,
+      seconds: controller.seconds.value,
+      mistakes: controller.mistakes,
+      hints: controller.hintsUsed,
+      streak: store.dailyStreak,
+      link: appHome(widget.shareBase ?? Uri.base),
+    );
+    await Clipboard.setData(ClipboardData(text: text));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        const SnackBar(content: Text('Result copied. Paste it anywhere.')),
+      );
+  }
+
   void _onChange() {
     _feedback();
     _checkMistakeLimit();
@@ -150,6 +201,7 @@ class _SolveScreenState extends State<SolveScreen>
     if (controller.solved) {
       if (_recorded) return;
       _recorded = true;
+      final before = unlockedAchievementIds(store);
       final dailyKey = widget.dailyKey;
       if (dailyKey != null) {
         store.recordDaily(
@@ -158,6 +210,7 @@ class _SolveScreenState extends State<SolveScreen>
           hints: controller.hintsUsed,
           seconds: controller.seconds.value,
         );
+        _announce(before);
         return;
       }
       final next = widget.puzzle.level + 1;
@@ -173,6 +226,7 @@ class _SolveScreenState extends State<SolveScreen>
           levelNames.containsKey(next)) {
         _newlyUnlockedLevel = next;
       }
+      _announce(before);
       return;
     }
     _recorded = false;
@@ -387,6 +441,7 @@ class _SolveScreenState extends State<SolveScreen>
                   dailyStreak: widget.dailyKey == null
                       ? null
                       : store.dailyStreak,
+                  onShare: widget.dailyKey == null ? null : _shareResult,
                 );
 
                 // Side by side on wide screens and on phones turned sideways, where a
@@ -848,6 +903,7 @@ class _StepPanel extends StatelessWidget {
     required this.newlyUnlockedLevel,
     required this.onNewPuzzle,
     required this.dailyStreak,
+    required this.onShare,
   });
 
   final SolveController controller;
@@ -863,6 +919,9 @@ class _StepPanel extends StatelessWidget {
   /// The daily-puzzle streak, or null when this is not the daily puzzle.
   final int? dailyStreak;
 
+  /// Copies the daily result to share, or null when this is not the daily.
+  final VoidCallback? onShare;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -875,6 +934,7 @@ class _StepPanel extends StatelessWidget {
         newlyUnlockedLevel: newlyUnlockedLevel,
         onNewPuzzle: onNewPuzzle,
         dailyStreak: dailyStreak,
+        onShare: onShare,
       );
     } else if (step != null) {
       content = switch (controller.hintLevel) {
@@ -929,12 +989,14 @@ class _Summary extends StatelessWidget {
     required this.newlyUnlockedLevel,
     required this.onNewPuzzle,
     required this.dailyStreak,
+    required this.onShare,
   });
 
   final SolveController controller;
   final int? newlyUnlockedLevel;
   final VoidCallback? onNewPuzzle;
   final int? dailyStreak;
+  final VoidCallback? onShare;
 
   @override
   Widget build(BuildContext context) {
@@ -992,6 +1054,15 @@ class _Summary extends StatelessWidget {
                 ),
               ),
             ],
+          ),
+        ],
+        if (onShare != null) ...[
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            key: const Key('share-result'),
+            onPressed: onShare,
+            icon: const Icon(Icons.share_outlined),
+            label: const Text('Copy my result'),
           ),
         ],
         if (onNewPuzzle != null) ...[
