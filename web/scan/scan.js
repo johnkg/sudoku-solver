@@ -264,7 +264,10 @@
 
   // The digit pixels of one cell as a small canvas ready for OCR, or null if
   // the cell is empty.
-  function cellImage(ink, row, col) {
+  function cellImage(ink, row, col, opt) {
+    var height = (opt && opt.height) || 48;
+    var cw = (opt && opt.cw) || 96;
+    var ch = (opt && opt.ch) || 96;
     var margin = 6;
     var x0 = col * CELL + margin;
     var y0 = row * CELL + margin;
@@ -289,13 +292,13 @@
     if (!keep.length || total < 40 || bh < n * 0.3) return null;
 
     var bw = bx1 - bx0 + 1;
-    var scale = 48 / bh;
+    var scale = height / bh;
     var canvas = document.createElement('canvas');
-    canvas.width = 96;
-    canvas.height = 96;
+    canvas.width = cw;
+    canvas.height = ch;
     var ctx = canvas.getContext('2d');
     ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, 96, 96);
+    ctx.fillRect(0, 0, cw, ch);
     var tiny = document.createElement('canvas');
     tiny.width = bw;
     tiny.height = bh;
@@ -313,13 +316,13 @@
     }
     tctx.putImageData(data, 0, 0);
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(tiny, (96 - bw * scale) / 2, (96 - bh * scale) / 2, bw * scale, bh * scale);
+    ctx.drawImage(tiny, (cw - bw * scale) / 2, (ch - bh * scale) / 2, bw * scale, bh * scale);
     return canvas;
   }
 
   // ------------------------------------------------------------------ read
 
-  function readFile(file) {
+  function readFile(file, options) {
     return loadGray(file).then(function (img) {
       var coarse = binarise(img.gray, img.w, img.h, Math.max(15, (Math.min(img.w, img.h) / 12) | 1), 0.85);
       var corners = findGrid(coarse, img.w, img.h);
@@ -328,7 +331,7 @@
 
       var cells = [];
       for (var i = 0; i < 81; i++) {
-        cells.push(cellImage(ink, Math.floor(i / 9), i % 9));
+        cells.push(cellImage(ink, Math.floor(i / 9), i % 9, options));
       }
       var inked = cells.filter(Boolean).length;
       if (inked === 0) throw new Error('I could not see any digits in the grid.');
@@ -336,6 +339,7 @@
       return getWorker().then(function (worker) {
         var digits = new Array(81).fill('0');
         var uncertain = [];
+        var confidences = {};
         var chain = Promise.resolve();
         function recognize(canvas, mode) {
           return worker
@@ -352,23 +356,45 @@
           if (!canvas) return;
           chain = chain
             .then(function () {
-              return recognize(canvas, '10');
-            })
-            .then(function (first) {
-              // Single-character mode sometimes returns nothing; try a
-              // couple of other layouts before giving up on the cell.
-              if (first.digit) return first;
-              return recognize(canvas, '8').then(function (second) {
-                return second.digit ? second : recognize(canvas, '7');
+              var modes = (options && options.modes) || ['8', '10', '7'];
+              if (!options || options.vote !== false) {
+                // Ask every layout, take the first answer, and flag the
+                // cell if another layout disagrees.
+                return modes.reduce(function (p, m) {
+                  return p.then(function (all) {
+                    return recognize(canvas, m).then(function (r) {
+                      all.push(r);
+                      return all;
+                    });
+                  });
+                }, Promise.resolve([])).then(function (all) {
+                  var seen = all.filter(function (r) { return r.digit; });
+                  if (!seen.length) return all[0];
+                  var best = seen[0];
+                  var disagree = seen.some(function (r) { return r.digit !== best.digit; });
+                  return { digit: best.digit, confidence: disagree ? Math.min(best.confidence, 50) : best.confidence };
+                });
+              }
+              var p = recognize(canvas, modes[0]);
+              modes.slice(1).forEach(function (m) {
+                p = p.then(function (r) {
+                  return r.digit ? r : recognize(canvas, m);
+                });
               });
+              return p;
             })
             .then(function (res) {
               if (res.digit) digits[idx] = res.digit;
+              confidences[idx] = res.confidence;
               if (!res.digit || res.confidence < 70) uncertain.push(idx);
             });
         });
         return chain.then(function () {
-          return { text: digits.join(''), uncertain: uncertain, found: inked };
+          var result = { text: digits.join(''), uncertain: uncertain, found: inked, confidences: confidences };
+          if (options && options.debug) {
+            result.cells = cells.map(function (c) { return c ? c.toDataURL() : null; });
+          }
+          return result;
         });
       });
     });
