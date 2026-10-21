@@ -18,7 +18,7 @@ class Skyscraper extends SolvingTechnique {
 
   @override
   Step? find(Board board) {
-    for (var digit = 1; digit <= 9; digit++) {
+    for (var digit = 1; digit <= maxDigit; digit++) {
       for (final rowsAreLines in const [true, false]) {
         final step = _findFor(board, digit, rowsAreLines);
         if (step != null) return step;
@@ -33,13 +33,13 @@ class Skyscraper extends SolvingTechnique {
 
     // Lines where the digit has exactly two spots (a strong link).
     final links = <Unit, List<int>>{};
-    for (var i = 0; i < 9; i++) {
-      final line = Board.units[(rowsAreLines ? 0 : 9) + i];
+    for (var i = 0; i < Board.size; i++) {
+      final line = rowsAreLines ? Board.row(i) : Board.column(i);
       final cells = [
         for (final c in line.cells)
           if (board.values[c] == 0 && hasDigit(board.candidates[c], digit)) c,
       ];
-      if (cells.length == 2) links[line] = cells;
+      if (cells.length == pairSize) links[line] = cells;
     }
 
     final lines = links.keys.toList();
@@ -112,7 +112,7 @@ class SimpleColoring extends SolvingTechnique {
 
   @override
   Step? find(Board board) {
-    for (var digit = 1; digit <= 9; digit++) {
+    for (var digit = 1; digit <= maxDigit; digit++) {
       final step = _findFor(board, digit);
       if (step != null) return step;
     }
@@ -158,7 +158,7 @@ class SimpleColoring extends SolvingTechnique {
             if (cell < other) ChainLink(cell, other, digit, strong: true),
       ];
 
-      for (var k = 0; k < 2; k++) {
+      for (var k = 0; k < names.length; k++) {
         final clash = combinations(
           byColour[k],
           2,
@@ -185,7 +185,7 @@ class SimpleColoring extends SolvingTechnique {
       }
 
       final eliminations = [
-        for (var cell = 0; cell < 81; cell++)
+        for (var cell = 0; cell < Board.cellCount; cell++)
           if (board.values[cell] == 0 &&
               hasDigit(board.candidates[cell], digit) &&
               !colour.containsKey(cell) &&

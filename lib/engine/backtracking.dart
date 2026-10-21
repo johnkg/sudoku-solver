@@ -26,8 +26,8 @@ void _search(Board board, int limit, List<Board> solutions) {
 
   // Branch on the empty cell with the fewest candidates.
   var best = -1;
-  var bestCount = 10;
-  for (var cell = 0; cell < 81; cell++) {
+  var bestCount = maxDigit + 1; // more than any cell can have
+  for (var cell = 0; cell < Board.cellCount; cell++) {
     if (board.values[cell] != 0) continue;
     final n = popCount(board.candidates[cell]);
     if (n < bestCount) {

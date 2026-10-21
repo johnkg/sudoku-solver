@@ -18,6 +18,9 @@ class DailyCalendar extends StatefulWidget {
 }
 
 class _DailyCalendarState extends State<DailyCalendar> {
+  /// A calendar wider than this would be taller than the screen.
+  static const _maxWidth = 360.0;
+
   late DateTime month = DateTime(widget.today.year, widget.today.month);
 
   static String _key(DateTime d) =>
@@ -50,8 +53,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
 
     return Center(
       child: ConstrainedBox(
-        // A calendar this wide would be taller than the screen.
-        constraints: const BoxConstraints(maxWidth: 360),
+        constraints: const BoxConstraints(maxWidth: _maxWidth),
         child: Column(
           children: [
             Row(
@@ -103,7 +105,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
             ),
             const SizedBox(height: 4),
             GridView.count(
-              crossAxisCount: 7,
+              crossAxisCount: DateTime.daysPerWeek,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               children: [

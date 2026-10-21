@@ -10,14 +10,14 @@ import 'technique.dart';
 ///
 /// Size 2 is a naked pair, 3 a triple, 4 a quad.
 class NakedSubset extends SolvingTechnique {
-  const NakedSubset(this.size) : assert(size >= 2 && size <= 4);
+  const NakedSubset(this.size) : assert(size >= pairSize && size <= quadSize);
 
   final int size;
 
   @override
   Technique get technique => switch (size) {
-    2 => Technique.nakedPair,
-    3 => Technique.nakedTriple,
+    pairSize => Technique.nakedPair,
+    tripleSize => Technique.nakedTriple,
     _ => Technique.nakedQuad,
   };
 
@@ -28,7 +28,7 @@ class NakedSubset extends SolvingTechnique {
       final open = [
         for (final c in unit.cells)
           if (board.values[c] == 0 &&
-              popCount(board.candidates[c]) >= 2 &&
+              popCount(board.candidates[c]) >= pairSize &&
               popCount(board.candidates[c]) <= size)
             c,
       ];

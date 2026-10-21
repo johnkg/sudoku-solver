@@ -10,14 +10,14 @@ import 'technique.dart';
 ///
 /// Size 2 is a hidden pair, 3 a triple, 4 a quad.
 class HiddenSubset extends SolvingTechnique {
-  const HiddenSubset(this.size) : assert(size >= 2 && size <= 4);
+  const HiddenSubset(this.size) : assert(size >= pairSize && size <= quadSize);
 
   final int size;
 
   @override
   Technique get technique => switch (size) {
-    2 => Technique.hiddenPair,
-    3 => Technique.hiddenTriple,
+    pairSize => Technique.hiddenPair,
+    tripleSize => Technique.hiddenTriple,
     _ => Technique.hiddenQuad,
   };
 
@@ -28,12 +28,14 @@ class HiddenSubset extends SolvingTechnique {
       // take it. A digit with one spot is a hidden single, not part of a
       // subset.
       final spots = <int, List<int>>{};
-      for (var digit = 1; digit <= 9; digit++) {
+      for (var digit = 1; digit <= maxDigit; digit++) {
         final cells = [
           for (final c in unit.cells)
             if (board.values[c] == 0 && hasDigit(board.candidates[c], digit)) c,
         ];
-        if (cells.length >= 2 && cells.length <= size) spots[digit] = cells;
+        if (cells.length >= pairSize && cells.length <= size) {
+          spots[digit] = cells;
+        }
       }
 
       for (final digits in combinations(spots.keys.toList(), size)) {

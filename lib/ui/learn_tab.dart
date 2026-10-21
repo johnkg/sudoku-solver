@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
+import 'layout.dart';
 import 'lesson_screen.dart';
 import 'level_header.dart';
 import 'levels.dart';
@@ -21,7 +22,7 @@ class LearnTab extends StatelessWidget {
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640),
+        constraints: const BoxConstraints(maxWidth: contentMaxWidth),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [

@@ -4,6 +4,7 @@ import '../engine/engine.dart';
 import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
 import 'board_view.dart';
+import 'layout.dart';
 import 'learn_tab.dart';
 import 'link_legend.dart';
 import 'levels.dart';
@@ -58,7 +59,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
     givens =
         widget.givens ??
         {
-          for (var i = 0; i < 81; i++)
+          for (var i = 0; i < Board.cellCount; i++)
             if (board.values[i] != 0) i,
         };
     boards.add(board);
@@ -251,9 +252,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
       body: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
-            final wide =
-                constraints.maxWidth >= 840 ||
-                constraints.maxWidth > constraints.maxHeight * 1.2;
+            final wide = useSideBySide(constraints);
             if (wide) {
               return Padding(
                 padding: const EdgeInsets.all(16),
@@ -261,12 +260,13 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Flexible(
-                      flex: 3,
+                      flex: boardFlex,
                       child: Align(
                         alignment: Alignment.topCenter,
                         child: ConstrainedBox(
                           constraints: BoxConstraints(
-                            maxWidth: constraints.maxHeight - 32,
+                            maxWidth:
+                                constraints.maxHeight - boardVerticalMargin,
                           ),
                           child: boardView,
                         ),
@@ -274,7 +274,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
                     ),
                     const SizedBox(width: 24),
                     Expanded(
-                      flex: 2,
+                      flex: panelFlex,
                       child: SingleChildScrollView(child: panel),
                     ),
                   ],
@@ -283,7 +283,9 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
             }
             return Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 560),
+                constraints: const BoxConstraints(
+                  maxWidth: boardScreenMaxWidth,
+                ),
                 child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [boardView, const SizedBox(height: 16), panel],
@@ -553,7 +555,7 @@ class _Question extends StatelessWidget {
         if (places)
           Row(
             children: [
-              for (var d = 1; d <= 9; d++)
+              for (var d = 1; d <= maxDigit; d++)
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -561,10 +563,13 @@ class _Question extends StatelessWidget {
                       key: Key('play-digit-$d'),
                       style: FilledButton.styleFrom(
                         padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, 48),
+                        minimumSize: const Size(0, minTapHeight),
                       ),
                       onPressed: selected == null ? null : () => onDigit(d),
-                      child: Text('$d', style: const TextStyle(fontSize: 20)),
+                      child: Text(
+                        '$d',
+                        style: const TextStyle(fontSize: keypadFontSize),
+                      ),
                     ),
                   ),
                 ),

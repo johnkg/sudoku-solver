@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../engine/engine.dart' show Technique;
 import '../progress/progress_scope.dart';
-import '../progress/progress_store.dart' show ProgressStore;
+import '../progress/progress_store.dart' show ProgressStore, PuzzleRecord;
 import 'achievements.dart';
 import 'daily_calendar.dart';
+import 'layout.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'solve_screen.dart' show formatClock;
@@ -22,7 +23,7 @@ class StatsScreen extends StatelessWidget {
     final records = store.records;
 
     final stars = records.values.fold<int>(0, (sum, r) => sum + r.stars);
-    final mostStars = puzzleLibrary.length * 3;
+    final mostStars = puzzleLibrary.length * PuzzleRecord.maxStars;
 
     int? fastest(Iterable<int?> times) {
       final known = times.whereType<int>();
@@ -60,7 +61,7 @@ class StatsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Statistics')),
       body: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 640),
+          constraints: const BoxConstraints(maxWidth: contentMaxWidth),
           child: ListView(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
             children: [

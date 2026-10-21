@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import '../settings/settings.dart';
+import 'layout.dart';
 import 'learn_tab.dart';
 import 'practice_tab.dart';
 import 'settings_screen.dart';
@@ -34,10 +35,14 @@ class SudokuApp extends StatelessWidget {
       appBarTheme: const AppBarTheme(centerTitle: true),
       cardTheme: CardThemeData(
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+        ),
       ),
       listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(cardRadius),
+        ),
       ),
     );
 

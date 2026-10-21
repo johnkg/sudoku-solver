@@ -1,6 +1,7 @@
 import '../bits.dart';
 import '../board.dart';
 import '../step.dart';
+import 'subsets.dart';
 import 'technique.dart';
 
 /// Cells in [cells] that are empty and still allow [digit].
@@ -33,15 +34,15 @@ class PointingPair extends SolvingTechnique {
   @override
   Step? find(Board board) {
     for (final box in Board.units.where((u) => u.kind == UnitKind.box)) {
-      for (var digit = 1; digit <= 9; digit++) {
+      for (var digit = 1; digit <= maxDigit; digit++) {
         final spots = _spots(board, box.cells, digit);
-        if (spots.length < 2) continue;
+        if (spots.length < pairSize) continue;
 
         final lines = [
           if (spots.map(Board.rowOf).toSet().length == 1)
             Board.units[Board.rowOf(spots.first)],
           if (spots.map(Board.columnOf).toSet().length == 1)
-            Board.units[9 + Board.columnOf(spots.first)],
+            Board.column(Board.columnOf(spots.first)),
         ];
         for (final line in lines) {
           final eliminations = _eliminationsFor(
@@ -82,12 +83,12 @@ class BoxLineReduction extends SolvingTechnique {
   @override
   Step? find(Board board) {
     for (final line in Board.units.where((u) => u.kind != UnitKind.box)) {
-      for (var digit = 1; digit <= 9; digit++) {
+      for (var digit = 1; digit <= maxDigit; digit++) {
         final spots = _spots(board, line.cells, digit);
-        if (spots.length < 2) continue;
+        if (spots.length < pairSize) continue;
         if (spots.map(Board.boxOf).toSet().length != 1) continue;
 
-        final box = Board.units[18 + Board.boxOf(spots.first)];
+        final box = Board.box(Board.boxOf(spots.first));
         final eliminations = _eliminationsFor(
           board,
           box.cells,

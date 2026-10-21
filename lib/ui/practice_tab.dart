@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../progress/progress_scope.dart';
 import 'daily_puzzle.dart';
+import 'layout.dart';
 import 'level_header.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
@@ -23,7 +24,7 @@ class PracticeTab extends StatelessWidget {
 
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 640),
+        constraints: const BoxConstraints(maxWidth: contentMaxWidth),
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [

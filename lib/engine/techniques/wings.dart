@@ -17,9 +17,9 @@ class YWing extends SolvingTechnique {
   @override
   Step? find(Board board) {
     bool isBivalue(int cell) =>
-        board.values[cell] == 0 && popCount(board.candidates[cell]) == 2;
+        board.values[cell] == 0 && popCount(board.candidates[cell]) == pairSize;
 
-    for (var pivot = 0; pivot < 81; pivot++) {
+    for (var pivot = 0; pivot < Board.cellCount; pivot++) {
       if (!isBivalue(pivot)) continue;
       final pivotMask = board.candidates[pivot];
       final bivalue = Board.peers[pivot].where(isBivalue).toList();
@@ -79,20 +79,21 @@ class XYZWing extends SolvingTechnique {
 
   @override
   Step? find(Board board) {
-    for (var pivot = 0; pivot < 81; pivot++) {
-      if (board.values[pivot] != 0 || popCount(board.candidates[pivot]) != 3) {
+    for (var pivot = 0; pivot < Board.cellCount; pivot++) {
+      if (board.values[pivot] != 0 ||
+          popCount(board.candidates[pivot]) != tripleSize) {
         continue;
       }
       final mask = board.candidates[pivot];
       final pincers = [
         for (final c in Board.peers[pivot])
           if (board.values[c] == 0 &&
-              popCount(board.candidates[c]) == 2 &&
+              popCount(board.candidates[c]) == pairSize &&
               board.candidates[c] & ~mask == 0)
             c,
       ];
 
-      for (final pair in combinations(pincers, 2)) {
+      for (final pair in combinations(pincers, pairSize)) {
         final a = board.candidates[pair[0]];
         final b = board.candidates[pair[1]];
         if (a == b || (a | b) != mask) continue;
@@ -145,12 +146,13 @@ class WWing extends SolvingTechnique {
   @override
   Step? find(Board board) {
     final bivalue = [
-      for (var c = 0; c < 81; c++)
-        if (board.values[c] == 0 && popCount(board.candidates[c]) == 2) c,
+      for (var c = 0; c < Board.cellCount; c++)
+        if (board.values[c] == 0 && popCount(board.candidates[c]) == pairSize)
+          c,
     ];
     final linksByDigit = <int, List<(int, int)>>{};
 
-    for (final pair in combinations(bivalue, 2)) {
+    for (final pair in combinations(bivalue, pairSize)) {
       final (x, y) = (pair[0], pair[1]);
       if (board.candidates[x] != board.candidates[y]) continue;
       if (Board.peers[x].contains(y)) continue; // that would be a naked pair

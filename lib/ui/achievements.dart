@@ -28,6 +28,22 @@ class Achievement {
   bool get unlocked => progress >= goal;
 }
 
+/// Under this many seconds, a flawless solve is a quick one.
+const quickSolveSeconds = 180;
+
+/// Dailies to solve for "Daily regular".
+const regularDailies = 10;
+
+/// Streak lengths, in days, that earn an achievement.
+const streakGoals = [3, 7, 30];
+
+/// Right answers for "Sharp eye".
+const sharpEyeAnswers = 25;
+
+/// Tries at one technique, and the share right, for "Technique master".
+const masterAttempts = 10;
+const masterAccuracy = 0.9;
+
 /// Every achievement with the player's progress on it, in the order shown.
 List<Achievement> achievementsFor(ProgressStore store) {
   final records = store.records;
@@ -54,14 +70,22 @@ List<Achievement> achievementsFor(ProgressStore store) {
       title: 'Flawless',
       description: 'Solve a puzzle with no mistakes and no hints.',
       icon: Icons.stars_outlined,
-      progress: results.any((r) => r.stars == 3) ? 1 : 0,
+      progress: results.any((r) => r.stars == PuzzleRecord.maxStars) ? 1 : 0,
     ),
     Achievement(
       id: 'quick',
       title: 'Quick thinker',
-      description: 'Solve a puzzle in under three minutes, flawlessly.',
+      description:
+          'Solve a puzzle in under ${quickSolveSeconds ~/ Duration.secondsPerMinute} '
+          'minutes, flawlessly.',
       icon: Icons.bolt_outlined,
-      progress: results.any((r) => r.stars == 3 && (r.seconds ?? 1 << 30) < 180)
+      progress:
+          results.any(
+            (r) =>
+                r.stars == PuzzleRecord.maxStars &&
+                r.seconds != null &&
+                r.seconds! < quickSolveSeconds,
+          )
           ? 1
           : 0,
     ),
@@ -87,12 +111,12 @@ List<Achievement> achievementsFor(ProgressStore store) {
     Achievement(
       id: 'daily-10',
       title: 'Daily regular',
-      description: 'Solve 10 daily puzzles.',
+      description: 'Solve $regularDailies daily puzzles.',
       icon: Icons.calendar_today_outlined,
       progress: store.dailySolvedCount,
-      goal: 10,
+      goal: regularDailies,
     ),
-    for (final days in const [3, 7, 30])
+    for (final days in streakGoals)
       Achievement(
         id: 'streak-$days',
         title: '$days days in a row',
@@ -104,17 +128,25 @@ List<Achievement> achievementsFor(ProgressStore store) {
     Achievement(
       id: 'sharp-eye',
       title: 'Sharp eye',
-      description: 'Spot or apply a technique correctly 25 times.',
+      description:
+          'Spot or apply a technique correctly $sharpEyeAnswers times.',
       icon: Icons.visibility_outlined,
       progress: rightAnswers,
-      goal: 25,
+      goal: sharpEyeAnswers,
     ),
     Achievement(
       id: 'technique-master',
       title: 'Technique master',
-      description: 'Be right at least 90% of 10 tries at one technique.',
+      description:
+          'Be right at least ${(masterAccuracy * 100).round()}% of '
+          '$masterAttempts tries at one technique.',
       icon: Icons.school_outlined,
-      progress: stats.any((s) => s.attempts >= 10 && s.accuracy >= 0.9) ? 1 : 0,
+      progress:
+          stats.any(
+            (s) => s.attempts >= masterAttempts && s.accuracy >= masterAccuracy,
+          )
+          ? 1
+          : 0,
     ),
   ];
 }

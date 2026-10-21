@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import '../engine/engine.dart';
 import '../scan/photo_scan.dart';
 import '../scan/scan_result.dart';
+import 'layout.dart';
 import 'puzzle_link.dart';
 import 'board_view.dart';
 import 'puzzle_library.dart';
@@ -14,7 +15,8 @@ import 'walkthrough_screen.dart';
 /// givens; `0`, `.`, `-`, `_` and `*` are blanks; whitespace is ignored.
 List<int>? parsePuzzleText(String text) {
   final chars = text.replaceAll(RegExp(r'\s'), '');
-  if (chars.length != 81 || !RegExp(r'^[0-9.\-_*]+$').hasMatch(chars)) {
+  if (chars.length != Board.cellCount ||
+      !RegExp(r'^[0-9.\-_*]+$').hasMatch(chars)) {
     return null;
   }
   return [for (final ch in chars.split('')) int.tryParse(ch) ?? 0];
@@ -41,7 +43,7 @@ class SolverTab extends StatefulWidget {
 }
 
 class _SolverTabState extends State<SolverTab> {
-  final cells = List.filled(81, 0);
+  final cells = List.filled(Board.cellCount, 0);
   final focus = FocusNode();
   int? selected;
 
@@ -67,7 +69,7 @@ class _SolverTabState extends State<SolverTab> {
 
   /// Entered digits that share a row, column or box with the same digit.
   Set<int> get clashing => {
-    for (var c = 0; c < 81; c++)
+    for (var c = 0; c < Board.cellCount; c++)
       if (cells[c] != 0 && Board.peers[c].any((p) => cells[p] == cells[c])) c,
   };
 
@@ -100,13 +102,14 @@ class _SolverTabState extends State<SolverTab> {
     final move = {
       LogicalKeyboardKey.arrowLeft: -1,
       LogicalKeyboardKey.arrowRight: 1,
-      LogicalKeyboardKey.arrowUp: -9,
-      LogicalKeyboardKey.arrowDown: 9,
+      LogicalKeyboardKey.arrowUp: -Board.size,
+      LogicalKeyboardKey.arrowDown: Board.size,
     }[key];
     if (move != null) {
       final to = (selected ?? 0) + move;
-      final wraps = move.abs() == 1 && to ~/ 9 != (selected ?? 0) ~/ 9;
-      if (selected != null && to >= 0 && to < 81 && !wraps) {
+      final wraps =
+          move.abs() == 1 && Board.rowOf(to) != Board.rowOf(selected ?? 0);
+      if (selected != null && to >= 0 && to < Board.cellCount && !wraps) {
         setState(() => selected = to);
       } else if (selected == null) {
         setState(() => selected = 0);
@@ -137,7 +140,7 @@ class _SolverTabState extends State<SolverTab> {
       if (ok != true) return;
     }
     setState(() {
-      cells.fillRange(0, 81, 0);
+      cells.fillRange(0, Board.cellCount, 0);
       selected = null;
       doubtful = {};
       note = null;
@@ -297,13 +300,13 @@ class _SolverTabState extends State<SolverTab> {
     final theme = Theme.of(context);
     final bad = clashing;
     final board = Board.fromState([
-      for (var c = 0; c < 81; c++) bad.contains(c) ? 0 : cells[c],
-    ], List.filled(81, 0));
+      for (var c = 0; c < Board.cellCount; c++) bad.contains(c) ? 0 : cells[c],
+    ], List.filled(Board.cellCount, 0));
 
     final boardView = BoardView(
       board: board,
       givens: {
-        for (var c = 0; c < 81; c++)
+        for (var c = 0; c < Board.cellCount; c++)
           if (cells[c] != 0) c,
       },
       showCandidates: false,
@@ -337,7 +340,7 @@ class _SolverTabState extends State<SolverTab> {
         const SizedBox(height: 12),
         Row(
           children: [
-            for (var d = 1; d <= 9; d++)
+            for (var d = 1; d <= maxDigit; d++)
               Expanded(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
@@ -345,10 +348,13 @@ class _SolverTabState extends State<SolverTab> {
                     key: Key('entry-$d'),
                     style: FilledButton.styleFrom(
                       padding: EdgeInsets.zero,
-                      minimumSize: const Size(0, 48),
+                      minimumSize: const Size(0, minTapHeight),
                     ),
                     onPressed: selected == null ? null : () => _enter(d),
-                    child: Text('$d', style: const TextStyle(fontSize: 20)),
+                    child: Text(
+                      '$d',
+                      style: const TextStyle(fontSize: keypadFontSize),
+                    ),
                   ),
                 ),
               ),
@@ -404,7 +410,9 @@ class _SolverTabState extends State<SolverTab> {
         const SizedBox(height: 12),
         FilledButton.icon(
           key: const Key('teach-me'),
-          style: FilledButton.styleFrom(minimumSize: const Size(0, 52)),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, largeButtonHeight),
+          ),
           onPressed: _teach,
           icon: const Icon(Icons.school),
           label: const Text('Teach me how to solve it'),
@@ -412,7 +420,9 @@ class _SolverTabState extends State<SolverTab> {
         const SizedBox(height: 8),
         OutlinedButton.icon(
           key: const Key('play-it'),
-          style: OutlinedButton.styleFrom(minimumSize: const Size(0, 52)),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(0, largeButtonHeight),
+          ),
           onPressed: _play,
           icon: const Icon(Icons.play_arrow),
           label: const Text('Play this puzzle myself'),
@@ -425,9 +435,7 @@ class _SolverTabState extends State<SolverTab> {
       onKeyEvent: _onKey,
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final wide =
-              constraints.maxWidth >= 840 ||
-              constraints.maxWidth > constraints.maxHeight * 1.2;
+          final wide = useSideBySide(constraints);
           if (wide) {
             return Padding(
               padding: const EdgeInsets.all(16),
@@ -435,12 +443,12 @@ class _SolverTabState extends State<SolverTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Flexible(
-                    flex: 3,
+                    flex: boardFlex,
                     child: Align(
                       alignment: Alignment.topCenter,
                       child: ConstrainedBox(
                         constraints: BoxConstraints(
-                          maxWidth: constraints.maxHeight - 32,
+                          maxWidth: constraints.maxHeight - boardVerticalMargin,
                         ),
                         child: boardView,
                       ),
@@ -448,7 +456,7 @@ class _SolverTabState extends State<SolverTab> {
                   ),
                   const SizedBox(width: 24),
                   Expanded(
-                    flex: 2,
+                    flex: panelFlex,
                     child: SingleChildScrollView(child: controls),
                   ),
                 ],
@@ -457,7 +465,7 @@ class _SolverTabState extends State<SolverTab> {
           }
           return Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 560),
+              constraints: const BoxConstraints(maxWidth: boardScreenMaxWidth),
               child: ListView(
                 padding: const EdgeInsets.all(16),
                 children: [boardView, const SizedBox(height: 16), controls],

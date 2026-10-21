@@ -22,24 +22,38 @@ class Unit {
 
 /// A 9x9 grid with placed values and pencil-mark candidates.
 ///
-/// Cells are indexed 0-80, row by row. A value of 0 means empty.
+/// Cells are indexed 0 to [cellCount] - 1, row by row. A value of 0 means empty.
 class Board {
   Board._(this.values, this.candidates);
 
-  /// Parses 81 characters: `1`-`9` for givens, `0` or `.` for blanks.
+  /// Cells along a row or column, and in a unit. Equal to [maxDigit].
+  static const size = maxDigit;
+
+  /// A box is [boxSize] by [boxSize] cells.
+  static const boxSize = 3;
+
+  static const cellCount = size * size;
+
+  /// The cell at [row] and [column], both counted from 0.
+  static int cellAt(int row, int column) => row * size + column;
+
+  /// Parses [cellCount] (81) characters: `1`-`9` for givens, `0` or `.` for blanks.
   /// Whitespace is ignored. Throws [FormatException] on bad input or if the
   /// givens already break a rule.
   factory Board.parse(String text) {
     final chars = text.replaceAll(RegExp(r'\s'), '').split('');
-    if (chars.length != 81) {
-      throw FormatException('Expected 81 cells, got ${chars.length}');
+    if (chars.length != cellCount) {
+      throw FormatException('Expected $cellCount cells, got ${chars.length}');
     }
-    final board = Board._(List.filled(81, 0), List.filled(81, allDigitsMask));
-    for (var cell = 0; cell < 81; cell++) {
+    final board = Board._(
+      List.filled(cellCount, 0),
+      List.filled(cellCount, allDigitsMask),
+    );
+    for (var cell = 0; cell < cellCount; cell++) {
       final ch = chars[cell];
       if (ch == '0' || ch == '.') continue;
       final digit = int.tryParse(ch);
-      if (digit == null || digit < 1 || digit > 9) {
+      if (digit == null || digit < 1 || digit > maxDigit) {
         throw FormatException('Bad character "$ch" at cell $cell');
       }
       if (!hasDigit(board.candidates[cell], digit)) {
@@ -54,11 +68,13 @@ class Board {
   /// [FormatException] if either list is the wrong size or holds impossible
   /// numbers.
   factory Board.fromState(List<int> values, List<int> candidates) {
-    if (values.length != 81 || candidates.length != 81) {
-      throw const FormatException('Expected 81 values and 81 candidate masks');
+    if (values.length != cellCount || candidates.length != cellCount) {
+      throw const FormatException(
+        'Expected $cellCount values and $cellCount candidate masks',
+      );
     }
-    for (var i = 0; i < 81; i++) {
-      if (values[i] < 0 || values[i] > 9) {
+    for (var i = 0; i < cellCount; i++) {
+      if (values[i] < 0 || values[i] > maxDigit) {
         throw FormatException('Bad value ${values[i]} at cell $i');
       }
       if (candidates[i] < 0 || candidates[i] > allDigitsMask) {
@@ -78,21 +94,31 @@ class Board {
 
   static final List<Unit> units = _buildUnits();
 
-  /// For each cell, the 20 other cells sharing a row, column, or box.
+  /// For each cell, the other cells sharing a row, column, or box (20 of them).
   static final List<List<int>> peers = _buildPeers();
 
-  static int rowOf(int cell) => cell ~/ 9;
-  static int columnOf(int cell) => cell % 9;
-  static int boxOf(int cell) => (rowOf(cell) ~/ 3) * 3 + columnOf(cell) ~/ 3;
+  static int rowOf(int cell) => cell ~/ size;
+  static int columnOf(int cell) => cell % size;
+  static int boxOf(int cell) =>
+      (rowOf(cell) ~/ boxSize) * boxSize + columnOf(cell) ~/ boxSize;
+
+  /// Row [index], counted from 0.
+  static Unit row(int index) => units[index];
+
+  /// Column [index], counted from 0.
+  static Unit column(int index) => units[size + index];
+
+  /// Box [index], counted from 0, left to right and top to bottom.
+  static Unit box(int index) => units[2 * size + index];
 
   static String cellName(int cell) =>
       'r${rowOf(cell) + 1}c${columnOf(cell) + 1}';
 
   /// The three units (row, column, box) containing [cell].
   static List<Unit> unitsOf(int cell) => [
-    units[rowOf(cell)],
-    units[9 + columnOf(cell)],
-    units[18 + boxOf(cell)],
+    row(rowOf(cell)),
+    column(columnOf(cell)),
+    box(boxOf(cell)),
   ];
 
   Board copy() => Board._(List.of(values), List.of(candidates));
@@ -101,7 +127,7 @@ class Board {
 
   /// True if some empty cell has no candidates left.
   bool get hasContradiction {
-    for (var cell = 0; cell < 81; cell++) {
+    for (var cell = 0; cell < cellCount; cell++) {
       if (values[cell] == 0 && candidates[cell] == 0) return true;
     }
     return false;
@@ -141,11 +167,11 @@ class Board {
   @override
   String toString() {
     final buffer = StringBuffer();
-    for (var r = 0; r < 9; r++) {
-      if (r > 0 && r % 3 == 0) buffer.writeln('------+-------+------');
-      for (var c = 0; c < 9; c++) {
-        if (c > 0 && c % 3 == 0) buffer.write('| ');
-        final v = values[r * 9 + c];
+    for (var r = 0; r < size; r++) {
+      if (r > 0 && r % boxSize == 0) buffer.writeln('------+-------+------');
+      for (var c = 0; c < size; c++) {
+        if (c > 0 && c % boxSize == 0) buffer.write('| ');
+        final v = values[cellAt(r, c)];
         buffer.write(v == 0 ? '. ' : '$v ');
       }
       buffer.writeln();
@@ -154,19 +180,22 @@ class Board {
   }
 
   static List<Unit> _buildUnits() => [
-    for (var r = 0; r < 9; r++)
-      Unit(UnitKind.row, r, [for (var c = 0; c < 9; c++) r * 9 + c]),
-    for (var c = 0; c < 9; c++)
-      Unit(UnitKind.column, c, [for (var r = 0; r < 9; r++) r * 9 + c]),
-    for (var b = 0; b < 9; b++)
+    for (var r = 0; r < size; r++)
+      Unit(UnitKind.row, r, [for (var c = 0; c < size; c++) cellAt(r, c)]),
+    for (var c = 0; c < size; c++)
+      Unit(UnitKind.column, c, [for (var r = 0; r < size; r++) cellAt(r, c)]),
+    for (var b = 0; b < size; b++)
       Unit(UnitKind.box, b, [
-        for (var i = 0; i < 9; i++)
-          ((b ~/ 3) * 3 + i ~/ 3) * 9 + (b % 3) * 3 + i % 3,
+        for (var i = 0; i < size; i++)
+          cellAt(
+            (b ~/ boxSize) * boxSize + i ~/ boxSize,
+            (b % boxSize) * boxSize + i % boxSize,
+          ),
       ]),
   ];
 
   static List<List<int>> _buildPeers() => [
-    for (var cell = 0; cell < 81; cell++)
+    for (var cell = 0; cell < cellCount; cell++)
       {for (final unit in unitsOf(cell)) ...unit.cells}
           .where((c) => c != cell)
           .toList(),

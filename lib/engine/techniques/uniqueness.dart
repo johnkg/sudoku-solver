@@ -18,20 +18,29 @@ import 'technique.dart';
 class UniqueRectangle extends SolvingTechnique {
   const UniqueRectangle();
 
+  /// The rectangle must span exactly two boxes, or swapping its digits could
+  /// break a box.
+  static const _boxes = 2;
+
+  /// Corners holding only the two digits, in types 1 and 2.
+  static const _type1Exact = 3;
+  static const _type2Exact = 2;
+
   @override
   Technique get technique => Technique.uniqueRectangle;
 
   @override
   Step? find(Board board) {
-    for (var r1 = 0; r1 < 8; r1++) {
-      for (var r2 = r1 + 1; r2 < 9; r2++) {
-        for (var c1 = 0; c1 < 8; c1++) {
-          for (var c2 = c1 + 1; c2 < 9; c2++) {
+    const last = Board.size - 1;
+    for (var r1 = 0; r1 < last; r1++) {
+      for (var r2 = r1 + 1; r2 <= last; r2++) {
+        for (var c1 = 0; c1 < last; c1++) {
+          for (var c2 = c1 + 1; c2 <= last; c2++) {
             final step = _checkRectangle(board, [
-              r1 * 9 + c1,
-              r1 * 9 + c2,
-              r2 * 9 + c1,
-              r2 * 9 + c2,
+              Board.cellAt(r1, c1),
+              Board.cellAt(r1, c2),
+              Board.cellAt(r2, c1),
+              Board.cellAt(r2, c2),
             ]);
             if (step != null) return step;
           }
@@ -43,12 +52,12 @@ class UniqueRectangle extends SolvingTechnique {
 
   Step? _checkRectangle(Board board, List<int> cells) {
     if (cells.any((c) => board.values[c] != 0)) return null;
-    if (cells.map(Board.boxOf).toSet().length != 2) return null;
+    if (cells.map(Board.boxOf).toSet().length != _boxes) return null;
 
     final common = cells.fold(allDigitsMask, (m, c) => m & board.candidates[c]);
-    if (popCount(common) < 2) return null;
+    if (popCount(common) < pairSize) return null;
 
-    for (final pair in combinations(digitsOf(common), 2)) {
+    for (final pair in combinations(digitsOf(common), pairSize)) {
       final (a, b) = (pair[0], pair[1]);
       final pairMask = digitBit(a) | digitBit(b);
       final exact = [
@@ -61,7 +70,7 @@ class UniqueRectangle extends SolvingTechnique {
       ];
       final rectangle = joinCells(cells);
 
-      if (exact.length == 3) {
+      if (exact.length == _type1Exact) {
         final cell = others.single;
         return Step(
           technique: technique,
@@ -79,7 +88,7 @@ class UniqueRectangle extends SolvingTechnique {
         );
       }
 
-      if (exact.length == 2) {
+      if (exact.length == _type2Exact) {
         final extra0 = board.candidates[others[0]] & ~pairMask;
         final extra1 = board.candidates[others[1]] & ~pairMask;
         if (extra0 != extra1 || popCount(extra0) != 1) continue;

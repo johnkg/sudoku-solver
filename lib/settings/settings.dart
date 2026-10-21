@@ -26,13 +26,17 @@ class Settings extends ChangeNotifier {
   static const _patternsKey = 'settings.patterns';
 
   /// The mistake limits to choose from. 0 means no limit.
-  static const mistakeLimits = [0, 3, 5];
+  static const mistakeLimits = [noLimit, defaultMistakeLimit, lenientLimit];
+
+  static const noLimit = 0;
+  static const defaultMistakeLimit = 3;
+  static const lenientLimit = 5;
 
   final SharedPreferences? _prefs;
   bool _haptics = true;
   bool _showClock = true;
   bool _patterns = false;
-  int _mistakeLimit = 3;
+  int _mistakeLimit = defaultMistakeLimit;
 
   bool get haptics => _haptics;
   bool get showClock => _showClock;
