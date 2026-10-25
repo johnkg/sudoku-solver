@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart' hide Step;
 
+import 'layout.dart';
+
 import '../engine/engine.dart';
 
 /// A line under a board explaining the lines drawn on it, if [step] has any.
@@ -17,7 +19,7 @@ class LinkLegend extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: Space.sm),
       child: Text(
         [
           if (strong)

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'layout.dart';
+
 import '../engine/engine.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
@@ -71,10 +73,10 @@ class DailyPuzzleCard extends StatelessWidget {
     final streak = store.dailyStreak;
 
     return Card(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: Space.lg),
       color: theme.colorScheme.primaryContainer,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(Space.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -98,7 +100,7 @@ class DailyPuzzleCard extends StatelessWidget {
                           Icons.local_fire_department,
                           color: theme.colorScheme.onPrimaryContainer,
                         ),
-                        const SizedBox(width: 4),
+                        const SizedBox(width: Space.xs),
                         Text(
                           '$streak ${streak == 1 ? 'day' : 'days'}',
                           style: theme.textTheme.labelLarge?.copyWith(
@@ -110,7 +112,7 @@ class DailyPuzzleCard extends StatelessWidget {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: Space.xs),
             Text(
               'Level $level · ${levelNames[level]}. The same puzzle for '
               'everyone today.',
@@ -118,10 +120,10 @@ class DailyPuzzleCard extends StatelessWidget {
                 color: theme.colorScheme.onPrimaryContainer,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             Wrap(
-              spacing: 12,
-              runSpacing: 8,
+              spacing: Space.md,
+              runSpacing: Space.sm,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 FilledButton.icon(

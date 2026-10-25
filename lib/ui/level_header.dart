@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'layout.dart';
+
 import 'levels.dart';
 
 /// The heading of one level on the Learn and Practice tabs: a numbered badge,
@@ -23,12 +25,12 @@ class LevelHeader extends StatelessWidget {
     final scheme = theme.colorScheme;
 
     return Padding(
-      padding: const EdgeInsets.only(top: 28, bottom: 12),
+      padding: const EdgeInsets.only(top: Space.wide, bottom: Space.md),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 18,
+            radius: avatarRadius,
             backgroundColor: unlocked
                 ? scheme.primary
                 : scheme.surfaceContainerHighest,
@@ -40,9 +42,9 @@ class LevelHeader extends StatelessWidget {
                     '$level',
                     style: const TextStyle(fontWeight: FontWeight.w700),
                   )
-                : const Icon(Icons.lock_outline, size: 18),
+                : const Icon(Icons.lock_outline, size: iconSmall),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: Space.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -53,7 +55,7 @@ class LevelHeader extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: Space.hair),
                 Text(
                   blurb,
                   style: theme.textTheme.bodySmall?.copyWith(

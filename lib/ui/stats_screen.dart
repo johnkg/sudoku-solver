@@ -33,11 +33,14 @@ class StatsScreen extends StatelessWidget {
     Widget tile(String label, String value, IconData icon) => Expanded(
       child: Card(
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+          padding: const EdgeInsets.symmetric(
+            vertical: Space.lg,
+            horizontal: Space.sm,
+          ),
           child: Column(
             children: [
               Icon(icon, color: theme.colorScheme.primary),
-              const SizedBox(height: 8),
+              const SizedBox(height: Space.sm),
               Text(
                 value,
                 style: theme.textTheme.titleLarge?.copyWith(
@@ -63,7 +66,12 @@ class StatsScreen extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: contentMaxWidth),
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+            padding: const EdgeInsets.fromLTRB(
+              Space.lg,
+              Space.sm,
+              Space.lg,
+              Space.xxl,
+            ),
             children: [
               Row(
                 children: [
@@ -91,7 +99,10 @@ class StatsScreen extends StatelessWidget {
               ),
               ..._techniqueSection(context, store),
               Padding(
-                padding: const EdgeInsets.only(top: 20, bottom: 8),
+                padding: const EdgeInsets.only(
+                  top: Space.roomy,
+                  bottom: Space.sm,
+                ),
                 child: Text(
                   'Daily puzzles',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -102,14 +113,14 @@ class StatsScreen extends StatelessWidget {
               Card(
                 key: const Key('daily-calendar'),
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(Space.md),
                   child: Column(
                     children: [
                       DailyCalendar(
                         solved: store.dailyRecords.keys.toSet(),
                         today: store.today,
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: Space.xs),
                       Text(
                         'Current streak ${store.dailyStreak} · '
                         'Best ${store.bestDailyStreak}',
@@ -122,7 +133,10 @@ class StatsScreen extends StatelessWidget {
               ),
               ..._achievementSection(context, store),
               Padding(
-                padding: const EdgeInsets.only(top: 20, bottom: 8),
+                padding: const EdgeInsets.only(
+                  top: Space.roomy,
+                  bottom: Space.sm,
+                ),
                 child: Text(
                   'By level',
                   style: theme.textTheme.titleMedium?.copyWith(
@@ -144,7 +158,7 @@ class StatsScreen extends StatelessWidget {
                     );
                     return Card(
                       child: Padding(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(Space.lg),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -166,9 +180,9 @@ class StatsScreen extends StatelessWidget {
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 8),
+                            const SizedBox(height: Space.sm),
                             ClipRRect(
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(barRadius),
                               child: LinearProgressIndicator(
                                 minHeight: 8,
                                 value: puzzles.isEmpty
@@ -176,7 +190,7 @@ class StatsScreen extends StatelessWidget {
                                     : solved / puzzles.length,
                               ),
                             ),
-                            const SizedBox(height: 4),
+                            const SizedBox(height: Space.xs),
                             Text(
                               '$solved of ${puzzles.length} solved',
                               style: theme.textTheme.bodySmall,
@@ -209,7 +223,7 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
 
   return [
     Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      padding: const EdgeInsets.only(top: Space.roomy, bottom: Space.sm),
       child: Text(
         'Techniques',
         style: theme.textTheme.titleMedium?.copyWith(
@@ -222,7 +236,7 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
         key: const Key('weak-spots'),
         color: theme.colorScheme.tertiaryContainer,
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(Space.lg),
           child: Text(
             'Worth revisiting: ${weak.map((t) => t.label).join(', ')}',
             style: theme.textTheme.bodyMedium?.copyWith(
@@ -233,7 +247,7 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
       ),
     for (final t in asked)
       Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(vertical: Space.xs),
         child: Row(
           children: [
             Expanded(
@@ -243,7 +257,7 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
             Expanded(
               flex: 5,
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.circular(barRadius),
                 child: LinearProgressIndicator(
                   minHeight: 8,
                   value: stats[t.name]!.accuracy,
@@ -251,7 +265,7 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
               ),
             ),
             SizedBox(
-              width: 56,
+              width: scoreColumnWidth,
               child: Text(
                 '${stats[t.name]!.right}/${stats[t.name]!.attempts}',
                 key: Key('stat-${t.name}'),
@@ -273,7 +287,7 @@ List<Widget> _achievementSection(BuildContext context, ProgressStore store) {
 
   return [
     Padding(
-      padding: const EdgeInsets.only(top: 20, bottom: 8),
+      padding: const EdgeInsets.only(top: Space.roomy, bottom: Space.sm),
       child: Text(
         'Achievements · $earned of ${all.length}',
         key: const Key('achievements-title'),
@@ -299,9 +313,9 @@ List<Widget> _achievementSection(BuildContext context, ProgressStore store) {
             children: [
               Text(a.description),
               if (!a.unlocked && a.goal > 1) ...[
-                const SizedBox(height: 6),
+                const SizedBox(height: Space.tight),
                 LinearProgressIndicator(value: a.progress / a.goal),
-                const SizedBox(height: 2),
+                const SizedBox(height: Space.hair),
                 Text(
                   '${a.progress} of ${a.goal}',
                   style: theme.textTheme.labelSmall,

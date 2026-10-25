@@ -125,7 +125,7 @@ class _QuizScreenState extends State<QuizScreen> {
       final q = question;
       final answered = correct != null;
       body = ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(Space.lg),
         children: [
           Text(
             '${round > 1 ? 'Round $round · ' : ''}Question ${index + 1} of '
@@ -134,7 +134,7 @@ class _QuizScreenState extends State<QuizScreen> {
               color: theme.colorScheme.primary,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Text(
             q.placesDigit
                 ? 'A $label is available. Tap the cell it lets you fill.'
@@ -143,7 +143,7 @@ class _QuizScreenState extends State<QuizScreen> {
             key: const Key('quiz-prompt'),
             style: theme.textTheme.bodyLarge,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.md),
           BoardView(
             board: q.board,
             givens: {
@@ -156,7 +156,7 @@ class _QuizScreenState extends State<QuizScreen> {
             marked: answered ? const {} : marked,
             onCellTap: _tap,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.md),
           if (!answered && !q.placesDigit)
             FilledButton(
               key: const Key('quiz-check'),
@@ -173,9 +173,9 @@ class _QuizScreenState extends State<QuizScreen> {
                     : theme.colorScheme.error,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: Space.xs),
             Text(q.step.explanation, style: theme.textTheme.bodyLarge),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             FilledButton(
               key: const Key('quiz-next'),
               onPressed: _next,
@@ -223,33 +223,33 @@ class _Results extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ListView(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(Space.xl),
       children: [
         Text(
           'You spotted $score of $total.',
           key: const Key('quiz-score'),
           style: theme.textTheme.headlineSmall,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Text(
           score == total
               ? 'Perfect. You can spot a $label.'
               : 'Re-read the lesson, then try again.',
           style: theme.textTheme.bodyLarge,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.lg),
         FilledButton(
           key: const Key('quiz-retry'),
           onPressed: onRetry,
           child: const Text('Try again'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         FilledButton.tonal(
           key: const Key('quiz-more'),
           onPressed: onMore,
           child: const Text('Fresh boards'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         OutlinedButton(
           onPressed: () => Navigator.pop(context),
           child: const Text('Back to the lesson'),

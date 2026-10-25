@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'layout.dart';
+
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
@@ -78,14 +80,14 @@ class _RandomPuzzleCardState extends State<RandomPuzzleCard> {
     final theme = Theme.of(context);
 
     return Card(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: Space.lg),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(Space.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Random puzzle', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
+            const SizedBox(height: Space.xs),
             Text(
               'A fresh puzzle at the level you choose. Practice only: it does '
               'not count towards unlocking.',
@@ -93,10 +95,10 @@ class _RandomPuzzleCardState extends State<RandomPuzzleCard> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             Wrap(
-              spacing: 8,
-              runSpacing: 8,
+              spacing: Space.sm,
+              runSpacing: Space.sm,
               children: [
                 for (final l in levelNames.keys)
                   ChoiceChip(
@@ -109,7 +111,7 @@ class _RandomPuzzleCardState extends State<RandomPuzzleCard> {
                   ),
               ],
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             FilledButton.icon(
               onPressed: () => playRandomPuzzle(context, level),
               icon: const Icon(Icons.shuffle),

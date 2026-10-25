@@ -17,7 +17,7 @@ class SettingsScreen extends StatelessWidget {
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: contentMaxWidth),
           child: ListView(
-            padding: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.symmetric(vertical: Space.sm),
             children: [
               SwitchListTile(
                 key: const Key('setting-haptics'),
@@ -52,7 +52,7 @@ class SettingsScreen extends StatelessWidget {
               ListTile(
                 title: const Text('Mistake limit'),
                 subtitle: const Padding(
-                  padding: EdgeInsets.only(top: 4),
+                  padding: EdgeInsets.only(top: Space.xs),
                   child: Text(
                     'After this many mistakes the game offers to start the '
                     'puzzle over.',
@@ -60,7 +60,7 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.symmetric(horizontal: Space.lg),
                 child: SegmentedButton<int>(
                   showSelectedIcon: false,
                   segments: [
@@ -78,7 +78,12 @@ class SettingsScreen extends StatelessWidget {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                padding: const EdgeInsets.fromLTRB(
+                  Space.lg,
+                  Space.lg,
+                  Space.lg,
+                  0,
+                ),
                 child: Text(
                   'Changes apply the next time you open a puzzle.',
                   style: theme.textTheme.bodySmall,

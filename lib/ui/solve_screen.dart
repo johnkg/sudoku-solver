@@ -456,12 +456,12 @@ class _SolveScreenState extends State<SolveScreen>
                 // full-width board would not fit the height.
                 if (useSideBySide(constraints)) {
                   return Padding(
-                    padding: const EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(Space.xl),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(flex: boardFlex, child: board),
-                        const SizedBox(width: 24),
+                        const SizedBox(width: Space.xl),
                         Expanded(
                           flex: panelFlex,
                           child: SingleChildScrollView(
@@ -469,11 +469,11 @@ class _SolveScreenState extends State<SolveScreen>
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
                                 stats,
-                                const SizedBox(height: 8),
+                                const SizedBox(height: Space.sm),
                                 status,
                                 tools,
                                 pad,
-                                const SizedBox(height: 16),
+                                const SizedBox(height: Space.lg),
                                 panel,
                               ],
                             ),
@@ -489,13 +489,15 @@ class _SolveScreenState extends State<SolveScreen>
                   children: [
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.only(bottom: 12),
+                        padding: const EdgeInsets.only(bottom: Space.md),
                         children: [
                           stats,
                           board,
                           status,
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: Space.md,
+                            ),
                             child: panel,
                           ),
                         ],
@@ -503,7 +505,7 @@ class _SolveScreenState extends State<SolveScreen>
                     ),
                     tools,
                     pad,
-                    const SizedBox(height: 8),
+                    const SizedBox(height: Space.sm),
                   ],
                 );
               },
@@ -546,10 +548,10 @@ class _PausedBoard extends StatelessWidget {
             children: [
               Icon(
                 Icons.play_circle_outline,
-                size: 64,
+                size: iconHero,
                 color: theme.colorScheme.primary,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: Space.sm),
               Text('Paused', style: theme.textTheme.titleLarge),
               Text('Tap to resume', style: theme.textTheme.bodyMedium),
             ],
@@ -610,7 +612,7 @@ class _StatsRow extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 2),
+            const SizedBox(height: Space.hair),
             Text(
               value,
               key: valueKey,
@@ -624,7 +626,12 @@ class _StatsRow extends StatelessWidget {
     );
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      padding: const EdgeInsets.fromLTRB(
+        Space.md,
+        Space.xs,
+        Space.md,
+        Space.md,
+      ),
       child: Row(
         children: [
           stat('Level $level', levelNames[level] ?? ''),
@@ -676,7 +683,12 @@ class _StatusLine extends StatelessWidget {
                   '${Board.cellName(controller.selected!)}.');
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 4),
+      padding: const EdgeInsets.fromLTRB(
+        Space.lg,
+        Space.snug,
+        Space.lg,
+        Space.xs,
+      ),
       child: Text(
         text,
         textAlign: TextAlign.center,
@@ -702,7 +714,10 @@ class _ToolBar extends StatelessWidget {
     final notes = controller.mode == EntryMode.notes;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: Space.sm,
+        vertical: Space.xs,
+      ),
       child: Row(
         children: [
           Expanded(
@@ -788,14 +803,14 @@ class _ToolButton extends StatelessWidget {
         onTap: onPressed,
         borderRadius: BorderRadius.circular(keyRadius),
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: Space.sm),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Icon(icon, size: 28, color: color),
+                  Icon(icon, size: iconMedium, color: color),
                   if (badge != null)
                     Positioned(
                       left: 16,
@@ -809,12 +824,12 @@ class _ToolButton extends StatelessWidget {
                           color: badge == 'ON'
                               ? scheme.primary
                               : scheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(badgeRadius),
                         ),
                         child: Text(
                           badge!,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: 9,
+                            fontSize: badgeFontSize,
                             fontWeight: FontWeight.w800,
                             color: badge == 'ON'
                                 ? scheme.onPrimary
@@ -825,7 +840,7 @@ class _ToolButton extends StatelessWidget {
                     ),
                 ],
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: Space.xs),
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(color: color),
@@ -853,7 +868,7 @@ class _NumberPad extends StatelessWidget {
     final values = controller.board.values;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 4),
+      padding: const EdgeInsets.symmetric(horizontal: Space.xs),
       child: Row(
         children: [
           for (var digit = 1; digit <= maxDigit; digit++)
@@ -884,7 +899,7 @@ class _NumberPad extends StatelessWidget {
                             : null,
                         borderRadius: BorderRadius.circular(keyRadius),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      padding: const EdgeInsets.symmetric(vertical: Space.snug),
                       child: Text(
                         '$digit',
                         textAlign: TextAlign.center,
@@ -959,7 +974,7 @@ class _StepPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('No technique applies', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Text(
             'This puzzle needs something beyond the Level 5 techniques the '
             'solver knows (for example forcing chains). Try undoing a step or '
@@ -979,7 +994,7 @@ class _StepPanel extends StatelessWidget {
                 : '$count ${count == 1 ? 'move' : 'moves'} so far',
             style: theme.textTheme.titleMedium,
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: Space.xs),
           Text(
             'Stuck? Tap Hint: first where to look, then the technique, '
             'then the move. Hardest technique here: ${focus.label}.',
@@ -990,7 +1005,7 @@ class _StepPanel extends StatelessWidget {
     }
 
     return Card(
-      child: Padding(padding: const EdgeInsets.all(16), child: content),
+      child: Padding(padding: const EdgeInsets.all(Space.lg), child: content),
     );
   }
 }
@@ -1024,15 +1039,15 @@ class _Summary extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Solved!', style: theme.textTheme.titleLarge),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Stars(
           count: PuzzleRecord(
             mistakes: controller.mistakes,
             hints: controller.hintsUsed,
           ).stars,
-          size: 28,
+          size: iconMedium,
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Text(
           '${formatClock(controller.seconds.value)} · '
           '${controller.moveCount} moves · ${controller.mistakes} mistakes · '
@@ -1041,7 +1056,7 @@ class _Summary extends StatelessWidget {
           style: theme.textTheme.bodyMedium,
         ),
         if (newlyUnlockedLevel != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Text(
             'Level $newlyUnlockedLevel · ${levelNames[newlyUnlockedLevel]} '
             'unlocked!',
@@ -1051,14 +1066,14 @@ class _Summary extends StatelessWidget {
           ),
         ],
         if (dailyStreak != null && dailyStreak! > 0) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Row(
             children: [
               Icon(
                 Icons.local_fire_department,
                 color: theme.colorScheme.primary,
               ),
-              const SizedBox(width: 4),
+              const SizedBox(width: Space.xs),
               Text(
                 '$dailyStreak ${dailyStreak == 1 ? 'day' : 'days'} in a row',
                 style: theme.textTheme.titleMedium?.copyWith(
@@ -1069,7 +1084,7 @@ class _Summary extends StatelessWidget {
           ),
         ],
         if (onShare != null) ...[
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.md),
           OutlinedButton.icon(
             key: const Key('share-result'),
             onPressed: onShare,
@@ -1078,7 +1093,7 @@ class _Summary extends StatelessWidget {
           ),
         ],
         if (onNewPuzzle != null) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: Space.lg),
           FilledButton.icon(
             onPressed: onNewPuzzle,
             icon: const Icon(Icons.shuffle),
@@ -1086,9 +1101,9 @@ class _Summary extends StatelessWidget {
           ),
         ],
         if (techniques.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Text('Solver steps you applied:', style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: Space.xs),
           for (final t in techniques)
             Text(
               '• ${t.label} × ${counts[t]}',
@@ -1114,12 +1129,12 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
           color: theme.colorScheme.primary,
         ),
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: Space.sm),
       if (level == SolveController.hintNudge)
         Text(nudgeText(step), style: theme.textTheme.bodyLarge)
       else ...[
         Wrap(
-          spacing: 8,
+          spacing: Space.sm,
           crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             Chip(label: Text(step.technique.label)),
@@ -1129,16 +1144,16 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
             ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Text(
           lessonFor(step.technique).tagline,
           style: theme.textTheme.bodyLarge,
         ),
       ],
-      const SizedBox(height: 16),
+      const SizedBox(height: Space.lg),
       Wrap(
-        spacing: 8,
-        runSpacing: 4,
+        spacing: Space.sm,
+        runSpacing: Space.xs,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           if (level == SolveController.hintNudge)
@@ -1178,7 +1193,7 @@ Widget _fullMove(BuildContext context, Step step, SolveController controller) {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Wrap(
-        spacing: 8,
+        spacing: Space.sm,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           Chip(label: Text(step.technique.label)),
@@ -1188,12 +1203,12 @@ Widget _fullMove(BuildContext context, Step step, SolveController controller) {
           ),
         ],
       ),
-      const SizedBox(height: 8),
+      const SizedBox(height: Space.sm),
       Text(step.explanation, style: theme.textTheme.bodyLarge),
-      const SizedBox(height: 16),
+      const SizedBox(height: Space.lg),
       Wrap(
-        spacing: 8,
-        runSpacing: 4,
+        spacing: Space.sm,
+        runSpacing: Space.xs,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
           FilledButton.icon(

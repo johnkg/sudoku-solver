@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'layout.dart';
+
 /// Runs [search] while a progress dialog is up. Returns what it found, or
 /// null if the player cancelled or nothing was found (in which case a message
 /// is shown). The dialog is closed before this returns.
@@ -23,11 +25,11 @@ Future<T?> runSearchWithDialog<T>(
       content: Row(
         children: [
           const SizedBox(
-            width: 28,
-            height: 28,
-            child: CircularProgressIndicator(strokeWidth: 3),
+            width: spinnerSize,
+            height: spinnerSize,
+            child: CircularProgressIndicator(strokeWidth: spinnerStroke),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: Space.lg),
           Expanded(child: Text(message)),
         ],
       ),

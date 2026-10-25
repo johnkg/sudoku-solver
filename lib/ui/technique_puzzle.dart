@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'layout.dart';
+
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
@@ -71,14 +73,14 @@ class _TechniquePuzzleCardState extends State<TechniquePuzzleCard> {
     final selected = options.contains(chosen) ? chosen : options.first;
 
     return Card(
-      margin: const EdgeInsets.only(top: 16),
+      margin: const EdgeInsets.only(top: Space.lg),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(Space.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Practise a technique', style: theme.textTheme.titleMedium),
-            const SizedBox(height: 4),
+            const SizedBox(height: Space.xs),
             Text(
               'A fresh puzzle built around the technique you pick. Harder ones '
               'can take a little while to find.',
@@ -86,7 +88,7 @@ class _TechniquePuzzleCardState extends State<TechniquePuzzleCard> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             DropdownButton<Technique>(
               key: const Key('technique-picker'),
               isExpanded: true,
@@ -97,7 +99,7 @@ class _TechniquePuzzleCardState extends State<TechniquePuzzleCard> {
               ],
               onChanged: (t) => setState(() => chosen = t),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: Space.md),
             FilledButton.icon(
               key: const Key('technique-puzzle'),
               onPressed: () => playTechniquePuzzle(context, selected!),

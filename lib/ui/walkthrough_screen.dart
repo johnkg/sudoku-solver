@@ -198,7 +198,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
           selected: {play},
           onSelectionChanged: (s) => _setPlay(s.first),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.lg),
         if (step != null && hidden)
           _Question(
             step: step,
@@ -225,7 +225,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
                       'on your own.'
                 : null,
           ),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.lg),
         _Controls(
           index: index,
           last: steps.length,
@@ -255,7 +255,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
             final wide = useSideBySide(constraints);
             if (wide) {
               return Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(Space.lg),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -272,7 +272,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: Space.xl),
                     Expanded(
                       flex: panelFlex,
                       child: SingleChildScrollView(child: panel),
@@ -287,8 +287,12 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
                   maxWidth: boardScreenMaxWidth,
                 ),
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [boardView, const SizedBox(height: 16), panel],
+                  padding: const EdgeInsets.all(Space.lg),
+                  children: [
+                    boardView,
+                    const SizedBox(height: Space.lg),
+                    panel,
+                  ],
                 ),
               ),
             );
@@ -322,16 +326,16 @@ class _StepPanel extends StatelessWidget {
             color: theme.colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         TechniqueLink(technique: step.technique),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         Text(step.explanation, style: theme.textTheme.bodyLarge),
         LinkLegend(step: step),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         Card(
           color: theme.colorScheme.secondaryContainer,
           child: Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(Space.md),
             child: Text(
               describeResult(step),
               style: theme.textTheme.bodyMedium?.copyWith(
@@ -358,7 +362,7 @@ class TechniqueLink extends StatelessWidget {
       alignment: Alignment.centerLeft,
       child: ActionChip(
         key: Key('technique-${technique.name}'),
-        avatar: const Icon(Icons.school_outlined, size: 18),
+        avatar: const Icon(Icons.school_outlined, size: iconSmall),
         label: Text(
           count == null
               ? '${technique.label} · ${levelNames[technique.level]}'
@@ -407,21 +411,21 @@ class _EndPanel extends StatelessWidget {
           style: theme.textTheme.headlineSmall,
         ),
         if (score != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Text(
             score!,
             key: const Key('score'),
             style: theme.textTheme.titleMedium,
           ),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         if (!solved && !revealed) ...[
           Text(
             'None of the techniques in this app finds another move. The rest '
             'needs something harder, or trial and error.',
             style: theme.textTheme.bodyLarge,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           OutlinedButton(
             key: const Key('reveal'),
             onPressed: onReveal,
@@ -429,11 +433,11 @@ class _EndPanel extends StatelessWidget {
           ),
         ],
         if (used.isNotEmpty) ...[
-          const SizedBox(height: 16),
+          const SizedBox(height: Space.lg),
           Text('Techniques used', style: theme.textTheme.titleMedium),
-          const SizedBox(height: 4),
+          const SizedBox(height: Space.xs),
           Wrap(
-            spacing: 8,
+            spacing: Space.sm,
             children: [
               for (final t in used)
                 TechniqueLink(technique: t, count: counts[t]),
@@ -484,7 +488,7 @@ class _Controls extends StatelessWidget {
                 label: const Text('Back'),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: Space.md),
             Expanded(
               child: FilledButton.icon(
                 key: const Key('next-step'),
@@ -542,7 +546,7 @@ class _Question extends StatelessWidget {
             color: theme.colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Text(
           places
               ? 'Find a digit you can place for certain. Tap its cell, then '
@@ -551,14 +555,14 @@ class _Question extends StatelessWidget {
                     'candidates. Which one finds a move on this board?',
           style: theme.textTheme.bodyLarge,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         if (places)
           Row(
             children: [
               for (var d = 1; d <= maxDigit; d++)
                 Expanded(
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: Space.hair),
                     child: FilledButton.tonal(
                       key: Key('play-digit-$d'),
                       style: FilledButton.styleFrom(
@@ -577,8 +581,8 @@ class _Question extends StatelessWidget {
           )
         else
           Wrap(
-            spacing: 8,
-            runSpacing: 4,
+            spacing: Space.sm,
+            runSpacing: Space.xs,
             children: [
               for (final t in techniqueChoices(board, step.technique))
                 ChoiceChip(
@@ -592,7 +596,7 @@ class _Question extends StatelessWidget {
             ],
           ),
         if (message != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           Text(
             message!,
             key: const Key('feedback'),
@@ -601,7 +605,7 @@ class _Question extends StatelessWidget {
             ),
           ),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         TextButton(
           key: const Key('show-me'),
           onPressed: onShowMe,

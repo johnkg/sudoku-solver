@@ -64,7 +64,7 @@ class _LessonScreenState extends State<LessonScreen> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         BoardView(
           board: view == _View.before ? before : after,
           givens: {
@@ -75,7 +75,7 @@ class _LessonScreenState extends State<LessonScreen> {
           step: view == _View.before ? step : null,
           candidateFocus: step,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         Text(
           view == _View.before ? step.explanation : describeResult(step),
           style: theme.textTheme.bodyLarge,
@@ -93,15 +93,15 @@ class _LessonScreenState extends State<LessonScreen> {
             color: theme.colorScheme.primary,
           ),
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: Space.xs),
         Text(lesson.tagline, style: theme.textTheme.headlineSmall),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.lg),
         Text('The idea', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 4),
+        const SizedBox(height: Space.xs),
         Text(lesson.idea, style: theme.textTheme.bodyLarge),
-        const SizedBox(height: 16),
+        const SizedBox(height: Space.lg),
         Text('How to spot it', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 4),
+        const SizedBox(height: Space.xs),
         Text(lesson.spot, style: theme.textTheme.bodyLarge),
       ],
     );
@@ -110,9 +110,9 @@ class _LessonScreenState extends State<LessonScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text('Practice', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Card(
-          margin: const EdgeInsets.only(bottom: 8),
+          margin: const EdgeInsets.only(bottom: Space.sm),
           child: ListTile(
             key: const Key('quiz-me'),
             leading: const Icon(Icons.quiz_outlined),
@@ -135,7 +135,7 @@ class _LessonScreenState extends State<LessonScreen> {
         else
           for (final puzzle in practice)
             Card(
-              margin: const EdgeInsets.only(bottom: 8),
+              margin: const EdgeInsets.only(bottom: Space.sm),
               child: ListTile(
                 title: Text(puzzle.title),
                 subtitle: const Text('Solve it with the solver\'s help'),
@@ -157,7 +157,7 @@ class _LessonScreenState extends State<LessonScreen> {
           builder: (context, constraints) {
             if (constraints.maxWidth >= wideLayoutMinWidth) {
               return Padding(
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.all(Space.xl),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -165,7 +165,7 @@ class _LessonScreenState extends State<LessonScreen> {
                       flex: boardFlex,
                       child: SingleChildScrollView(child: example),
                     ),
-                    const SizedBox(width: 24),
+                    const SizedBox(width: Space.xl),
                     Expanded(
                       flex: panelFlex,
                       child: SingleChildScrollView(
@@ -173,7 +173,7 @@ class _LessonScreenState extends State<LessonScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             text,
-                            const SizedBox(height: 24),
+                            const SizedBox(height: Space.xl),
                             practiceSection,
                           ],
                         ),
@@ -184,12 +184,12 @@ class _LessonScreenState extends State<LessonScreen> {
               );
             }
             return ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(Space.lg),
               children: [
                 text,
-                const SizedBox(height: 24),
+                const SizedBox(height: Space.xl),
                 example,
-                const SizedBox(height: 24),
+                const SizedBox(height: Space.xl),
                 practiceSection,
               ],
             );
