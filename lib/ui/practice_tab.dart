@@ -26,14 +26,19 @@ class PracticeTab extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: contentMaxWidth),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(
+            Space.lg,
+            Space.sm,
+            Space.lg,
+            Space.xxl,
+          ),
           children: [
             Text(
               'Pick a puzzle. Place digits yourself, and ask for a hint when '
               'you are stuck.',
               style: theme.textTheme.bodyLarge,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: Space.xs),
             Text(
               '${store.solvedCount} of ${puzzleLibrary.length} puzzles solved',
               style: theme.textTheme.labelLarge?.copyWith(
@@ -105,7 +110,7 @@ class _PuzzleTile extends StatelessWidget {
     }
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: Space.sm),
       child: ListTile(
         enabled: unlocked,
         title: Text(puzzle.title),

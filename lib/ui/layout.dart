@@ -45,3 +45,33 @@ const disabledOpacity = 0.38;
 
 /// Opacity of a digit on the number pad once all of it is placed.
 const usedUpOpacity = 0.2;
+
+/// The spacing scale used for padding and gaps between widgets.
+abstract final class Space {
+  static const double hair = 2;
+  static const double xs = 4;
+  static const double tight = 6;
+  static const double sm = 8;
+  static const double snug = 10;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double roomy = 20;
+  static const double xl = 24;
+  static const double wide = 28;
+  static const double xxl = 32;
+}
+
+/// Icon and indicator sizes.
+const iconSmall = 18.0;
+const iconMedium = 28.0;
+const iconHero = 64.0;
+const avatarRadius = 18.0;
+const spinnerSize = 28.0;
+const spinnerStroke = 3.0;
+
+/// Small radii and widths for bars, badges and outlines.
+const barRadius = 4.0;
+const badgeRadius = 8.0;
+const badgeFontSize = 9.0;
+const todayRingWidth = 2.0;
+const scoreColumnWidth = 56.0;

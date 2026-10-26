@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'layout.dart';
+
 const _monthNames = [
   'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
   'September', 'October', 'November', 'December', //
@@ -103,7 +105,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
                   ),
               ],
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: Space.xs),
             GridView.count(
               crossAxisCount: DateTime.daysPerWeek,
               shrinkWrap: true,
@@ -130,7 +132,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
                             border: isToday
                                 ? Border.all(
                                     color: theme.colorScheme.primary,
-                                    width: 2,
+                                    width: todayRingWidth,
                                   )
                                 : null,
                           ),

@@ -24,7 +24,12 @@ class LearnTab extends StatelessWidget {
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: contentMaxWidth),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+          padding: const EdgeInsets.fromLTRB(
+            Space.lg,
+            Space.sm,
+            Space.lg,
+            Space.xxl,
+          ),
           children: [
             Text(
               'Learn the techniques one at a time, from the simplest to the '
@@ -34,10 +39,10 @@ class LearnTab extends StatelessWidget {
             if (weakSpots(store).isNotEmpty)
               Card(
                 key: const Key('revisit'),
-                margin: const EdgeInsets.only(top: 12),
+                margin: const EdgeInsets.only(top: Space.md),
                 color: theme.colorScheme.tertiaryContainer,
                 child: Padding(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(Space.md),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -47,9 +52,9 @@ class LearnTab extends StatelessWidget {
                           color: theme.colorScheme.onTertiaryContainer,
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: Space.sm),
                       Wrap(
-                        spacing: 8,
+                        spacing: Space.sm,
                         children: [
                           for (final t in weakSpots(store))
                             ActionChip(
@@ -108,7 +113,7 @@ class _LessonTile extends StatelessWidget {
     );
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: Space.sm),
       child: ListTile(
         enabled: unlocked,
         title: Text(lesson.technique.label),

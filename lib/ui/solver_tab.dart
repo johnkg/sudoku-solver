@@ -183,7 +183,7 @@ class _SolverTabState extends State<SolverTab> {
               content: Row(
                 children: [
                   CircularProgressIndicator(),
-                  SizedBox(width: 20),
+                  SizedBox(width: Space.roomy),
                   Expanded(child: Text('Reading the photo…')),
                 ],
               ),
@@ -337,13 +337,13 @@ class _SolverTabState extends State<SolverTab> {
             color: bad.isNotEmpty ? theme.colorScheme.error : null,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         Row(
           children: [
             for (var d = 1; d <= maxDigit; d++)
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: Space.hair),
                   child: FilledButton.tonal(
                     key: Key('entry-$d'),
                     style: FilledButton.styleFrom(
@@ -360,7 +360,7 @@ class _SolverTabState extends State<SolverTab> {
               ),
           ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         Row(
           children: [
             Expanded(
@@ -371,7 +371,7 @@ class _SolverTabState extends State<SolverTab> {
                 label: const Text('Erase'),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: Space.sm),
             Expanded(
               child: OutlinedButton.icon(
                 key: const Key('import'),
@@ -380,7 +380,7 @@ class _SolverTabState extends State<SolverTab> {
                 label: const Text('Paste'),
               ),
             ),
-            const SizedBox(width: 8),
+            const SizedBox(width: Space.sm),
             Expanded(
               child: OutlinedButton.icon(
                 key: const Key('clear-grid'),
@@ -392,7 +392,7 @@ class _SolverTabState extends State<SolverTab> {
           ],
         ),
         if (_scanner != null) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: Space.sm),
           OutlinedButton.icon(
             key: const Key('scan-photo'),
             onPressed: _scan,
@@ -400,14 +400,14 @@ class _SolverTabState extends State<SolverTab> {
             label: const Text('Scan from a photo'),
           ),
         ],
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         OutlinedButton.icon(
           key: const Key('copy-link'),
           onPressed: filled == 0 || bad.isNotEmpty ? null : _copyLink,
           icon: const Icon(Icons.link),
           label: const Text('Copy a link to this puzzle'),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: Space.md),
         FilledButton.icon(
           key: const Key('teach-me'),
           style: FilledButton.styleFrom(
@@ -417,7 +417,7 @@ class _SolverTabState extends State<SolverTab> {
           icon: const Icon(Icons.school),
           label: const Text('Teach me how to solve it'),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: Space.sm),
         OutlinedButton.icon(
           key: const Key('play-it'),
           style: OutlinedButton.styleFrom(
@@ -438,7 +438,7 @@ class _SolverTabState extends State<SolverTab> {
           final wide = useSideBySide(constraints);
           if (wide) {
             return Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(Space.lg),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -454,7 +454,7 @@ class _SolverTabState extends State<SolverTab> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 24),
+                  const SizedBox(width: Space.xl),
                   Expanded(
                     flex: panelFlex,
                     child: SingleChildScrollView(child: controls),
@@ -467,8 +467,12 @@ class _SolverTabState extends State<SolverTab> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: boardScreenMaxWidth),
               child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [boardView, const SizedBox(height: 16), controls],
+                padding: const EdgeInsets.all(Space.lg),
+                children: [
+                  boardView,
+                  const SizedBox(height: Space.lg),
+                  controls,
+                ],
               ),
             ),
           );
@@ -515,7 +519,7 @@ class _ImportDialogState extends State<_ImportDialog> {
             'Paste the 81 characters of a puzzle, row by row. Use 0 or . for '
             'blanks.',
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: Space.md),
           TextField(
             key: const Key('import-field'),
             controller: controller,
