@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import '../settings/settings.dart';
+import 'cheat_sheet_screen.dart';
 import 'learn_tab.dart';
 import 'practice_tab.dart';
 import 'settings_screen.dart';
@@ -42,7 +43,7 @@ class SudokuApp extends StatelessWidget {
   }
 }
 
-enum _MenuAction { stats, settings, unlockAll, reset }
+enum _MenuAction { cheatSheet, stats, settings, unlockAll, reset }
 
 /// Two tabs: lessons to learn from, puzzles to practise on.
 class AppShell extends StatefulWidget {
@@ -60,6 +61,10 @@ class _AppShellState extends State<AppShell> {
   Future<void> _onMenu(_MenuAction action) async {
     final store = ProgressScope.read(context);
     switch (action) {
+      case _MenuAction.cheatSheet:
+        await Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const CheatSheetScreen()),
+        );
       case _MenuAction.stats:
         await Navigator.of(context)
             .push(MaterialPageRoute<void>(builder: (_) => const StatsScreen()));
@@ -106,6 +111,10 @@ class _AppShellState extends State<AppShell> {
             tooltip: 'Progress options',
             onSelected: _onMenu,
             itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: _MenuAction.cheatSheet,
+                child: Text('Technique cheat sheet'),
+              ),
               const PopupMenuItem(
                 value: _MenuAction.stats,
                 child: Text('Statistics'),

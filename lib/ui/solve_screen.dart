@@ -632,25 +632,38 @@ class _StatsRow extends StatelessWidget {
         Space.md,
         Space.md,
       ),
-      child: Row(
-        children: [
-          stat('Level $level', levelNames[level] ?? ''),
-          stat(
-            'Mistakes',
-            limit == 0 ? '$mistakes' : '$mistakes/$limit',
-            valueKey: const Key('mistakes-value'),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(cardRadius),
+          border: Border.all(color: theme.colorScheme.outlineVariant),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.md,
+            vertical: Space.sm,
           ),
-          stat('Hints', '$hints', valueKey: const Key('hints-value')),
-          if (showClock)
-            ValueListenableBuilder<int>(
-              valueListenable: seconds,
-              builder: (context, value, _) => stat(
-                'Time',
-                formatClock(value),
-                valueKey: const Key('time-value'),
+          child: Row(
+            children: [
+              stat('Level $level', levelNames[level] ?? ''),
+              stat(
+                'Mistakes',
+                limit == 0 ? '$mistakes' : '$mistakes/$limit',
+                valueKey: const Key('mistakes-value'),
               ),
-            ),
-        ],
+              stat('Hints', '$hints', valueKey: const Key('hints-value')),
+              if (showClock)
+                ValueListenableBuilder<int>(
+                  valueListenable: seconds,
+                  builder: (context, value, _) => stat(
+                    'Time',
+                    formatClock(value),
+                    valueKey: const Key('time-value'),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -689,13 +702,27 @@ class _StatusLine extends StatelessWidget {
         Space.lg,
         Space.xs,
       ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: theme.textTheme.bodyMedium?.copyWith(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           color: controller.messageIsError
-              ? theme.colorScheme.error
-              : theme.colorScheme.onSurfaceVariant,
+              ? theme.colorScheme.errorContainer
+              : theme.colorScheme.surfaceContainer,
+          borderRadius: BorderRadius.circular(keyRadius),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: Space.md,
+            vertical: Space.sm,
+          ),
+          child: Text(
+            text,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: controller.messageIsError
+                  ? theme.colorScheme.onErrorContainer
+                  : theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
         ),
       ),
     );
@@ -799,53 +826,59 @@ class _ToolButton extends StatelessWidget {
 
     return Tooltip(
       message: tooltip,
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(keyRadius),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: Space.sm),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(icon, size: iconMedium, color: color),
-                  if (badge != null)
-                    Positioned(
-                      left: 16,
-                      top: -8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 5,
-                          vertical: 1,
-                        ),
-                        decoration: BoxDecoration(
-                          color: badge == 'ON'
-                              ? scheme.primary
-                              : scheme.outlineVariant,
-                          borderRadius: BorderRadius.circular(badgeRadius),
-                        ),
-                        child: Text(
-                          badge!,
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontSize: badgeFontSize,
-                            fontWeight: FontWeight.w800,
+      child: Ink(
+        decoration: BoxDecoration(
+          color: badge == 'ON' ? scheme.primaryContainer : null,
+          borderRadius: BorderRadius.circular(keyRadius),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(keyRadius),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: Space.sm),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, size: iconMedium, color: color),
+                    if (badge != null)
+                      Positioned(
+                        left: 16,
+                        top: -8,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
                             color: badge == 'ON'
-                                ? scheme.onPrimary
-                                : scheme.onSurfaceVariant,
+                                ? scheme.primary
+                                : scheme.outlineVariant,
+                            borderRadius: BorderRadius.circular(badgeRadius),
+                          ),
+                          child: Text(
+                            badge!,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: badgeFontSize,
+                              fontWeight: FontWeight.w800,
+                              color: badge == 'ON'
+                                  ? scheme.onPrimary
+                                  : scheme.onSurfaceVariant,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-              const SizedBox(height: Space.xs),
-              Text(
-                label,
-                style: theme.textTheme.labelMedium?.copyWith(color: color),
-              ),
-            ],
+                  ],
+                ),
+                const SizedBox(height: Space.xs),
+                Text(
+                  label,
+                  style: theme.textTheme.labelMedium?.copyWith(color: color),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -893,22 +926,30 @@ class _NumberPad extends StatelessWidget {
                             controller.toggleArmed(digit);
                           },
                     child: Container(
+                      margin: const EdgeInsets.all(Space.hair),
                       decoration: BoxDecoration(
                         color: controller.armed == digit
-                            ? scheme.primaryContainer
-                            : null,
+                            ? scheme.primary
+                            : scheme.surfaceContainerLowest,
                         borderRadius: BorderRadius.circular(keyRadius),
+                        border: Border.all(
+                          color: controller.armed == digit
+                              ? scheme.primary
+                              : scheme.outlineVariant,
+                        ),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: Space.snug),
                       child: Text(
                         '$digit',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineLarge?.copyWith(
-                          fontWeight: FontWeight.w400,
+                          fontWeight: FontWeight.w500,
                           color: done
                               ? scheme.onSurface.withValues(
                                   alpha: usedUpOpacity,
                                 )
+                              : controller.armed == digit
+                              ? scheme.onPrimary
                               : scheme.primary,
                         ),
                       ),
