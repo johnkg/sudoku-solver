@@ -7,6 +7,7 @@ void main() {
     await tester.pumpWidget(SudokuApp(store: ProgressStore.memory()));
     expect(find.text('Sudoku Technique Teacher'), findsOneWidget);
     expect(find.text('Level 1 · Beginner'), findsOneWidget);
-    expect(find.text('Full House'), findsOneWidget); // Learn tab first
+    // Learn tab first: the next-up card and the lesson tile.
+    expect(find.text('Full House'), findsNWidgets(2));
   });
 }

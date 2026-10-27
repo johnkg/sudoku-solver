@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../progress/progress_scope.dart';
+import '../progress/progress_store.dart';
 import 'daily_puzzle.dart';
 import 'layout.dart';
 import 'level_header.dart';
@@ -11,6 +12,7 @@ import 'solve_screen.dart';
 import 'stars.dart';
 import 'technique_puzzle.dart';
 import 'unlocking.dart';
+import 'weak_spots_card.dart';
 
 /// The list of practice puzzles, grouped by level. A level opens once the one
 /// below is solved.
@@ -46,6 +48,7 @@ class PracticeTab extends StatelessWidget {
               ),
             ),
             const DailyPuzzleCard(),
+            const WeakSpotsCard(),
             RandomPuzzleCard(
               isUnlocked: (level) => isLevelUnlocked(store, level),
             ),
@@ -65,6 +68,7 @@ class PracticeTab extends StatelessWidget {
                         blurb: unlocked
                             ? levelBlurbs[level]!
                             : unlockHint(level),
+                        progress: _progressLabel(store, level),
                       ),
                       for (final puzzle in puzzleLibrary.where(
                         (p) => p.level == level,
@@ -80,6 +84,12 @@ class PracticeTab extends StatelessWidget {
       ),
     );
   }
+}
+
+String _progressLabel(ProgressStore store, int level) {
+  final inLevel = puzzleLibrary.where((p) => p.level == level);
+  return '${inLevel.where((p) => store.isSolved(p.id)).length} / '
+      '${inLevel.length}';
 }
 
 class _PuzzleTile extends StatelessWidget {

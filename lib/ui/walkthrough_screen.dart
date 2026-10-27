@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' hide Step;
 import '../engine/engine.dart';
 import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
+import 'board_legend.dart';
 import 'board_view.dart';
 import 'layout.dart';
 import 'learn_tab.dart';
@@ -198,7 +199,12 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
           selected: {play},
           onSelectionChanged: (s) => _setPlay(s.first),
         ),
-        const SizedBox(height: Space.lg),
+        const SizedBox(height: Space.md),
+        if (step != null && !hidden) ...[
+          const BoardLegend(),
+          const SizedBox(height: Space.lg),
+        ] else
+          const SizedBox(height: Space.lg),
         if (step != null && hidden)
           _Question(
             step: step,
