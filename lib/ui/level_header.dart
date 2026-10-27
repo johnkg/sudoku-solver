@@ -29,20 +29,29 @@ class LevelHeader extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CircleAvatar(
-            radius: avatarRadius,
-            backgroundColor: unlocked
-                ? scheme.primary
-                : scheme.surfaceContainerHighest,
-            foregroundColor: unlocked
-                ? scheme.onPrimary
-                : scheme.onSurfaceVariant,
+          Container(
+            width: avatarRadius * 2,
+            height: avatarRadius * 2,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: unlocked
+                  ? scheme.primaryContainer
+                  : scheme.surfaceContainer,
+              borderRadius: BorderRadius.circular(keyRadius),
+            ),
             child: unlocked
                 ? Text(
                     '$level',
-                    style: const TextStyle(fontWeight: FontWeight.w700),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w800,
+                    ),
                   )
-                : const Icon(Icons.lock_outline, size: iconSmall),
+                : Icon(
+                    Icons.lock_outline,
+                    size: iconSmall,
+                    color: scheme.onSurfaceVariant,
+                  ),
           ),
           const SizedBox(width: Space.md),
           Expanded(
