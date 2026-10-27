@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import '../settings/settings.dart';
-import 'layout.dart';
 import 'learn_tab.dart';
 import 'practice_tab.dart';
 import 'settings_screen.dart';
 import 'solver_tab.dart';
 import 'stats_screen.dart';
+import 'theme.dart';
 
 class SudokuApp extends StatelessWidget {
   SudokuApp({
@@ -26,26 +26,6 @@ class SudokuApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    ThemeData theme(Brightness brightness) => ThemeData(
-      useMaterial3: true,
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF3F51B5),
-        brightness: brightness,
-      ),
-      appBarTheme: const AppBarTheme(centerTitle: true),
-      cardTheme: CardThemeData(
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(cardRadius),
-        ),
-      ),
-      listTileTheme: ListTileThemeData(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(cardRadius),
-        ),
-      ),
-    );
-
     return SettingsScope(
       settings: settings,
       child: ProgressScope(
@@ -53,8 +33,8 @@ class SudokuApp extends StatelessWidget {
         child: MaterialApp(
           title: 'Sudoku Technique Teacher',
           debugShowCheckedModeBanner: false,
-          theme: theme(Brightness.light),
-          darkTheme: theme(Brightness.dark),
+          theme: buildTheme(Brightness.light),
+          darkTheme: buildTheme(Brightness.dark),
           home: AppShell(initialPuzzle: initialPuzzle),
         ),
       ),
