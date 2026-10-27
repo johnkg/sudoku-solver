@@ -121,6 +121,8 @@ class DailyPuzzleCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: Space.md),
+            _WeekDots(store: store),
+            const SizedBox(height: Space.md),
             Wrap(
               spacing: Space.md,
               runSpacing: Space.sm,
@@ -143,6 +145,74 @@ class DailyPuzzleCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// The days of the week [today] falls in, Monday first.
+List<DateTime> weekOf(DateTime today) {
+  final monday = DateTime(
+    today.year,
+    today.month,
+    today.day - (today.weekday - 1),
+  );
+  return [
+    for (var i = 0; i < 7; i++)
+      DateTime(monday.year, monday.month, monday.day + i),
+  ];
+}
+
+/// One dot per day of this week: filled when that day's puzzle is solved,
+/// ringed for today.
+class _WeekDots extends StatelessWidget {
+  const _WeekDots({required this.store});
+
+  final ProgressStore store;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = theme.colorScheme.onPrimaryContainer;
+    final today = store.today;
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    return Row(
+      key: const Key('week-dots'),
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        for (final day in weekOf(today))
+          Semantics(
+            label:
+                '${_weekdays[day.weekday - 1]}: '
+                '${store.dailyRecord(ProgressStore.dayKey(day)) != null ? 'solved' : 'not solved'}',
+            excludeSemantics: true,
+            child: Column(
+              children: [
+                Text(
+                  _weekdays[day.weekday - 1][0],
+                  style: theme.textTheme.labelSmall?.copyWith(color: color),
+                ),
+                const SizedBox(height: Space.xs),
+                Container(
+                  width: weekDotSize,
+                  height: weekDotSize,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: store.dailyRecord(ProgressStore.dayKey(day)) != null
+                        ? color
+                        : null,
+                    border: Border.all(
+                      color: color.withValues(
+                        alpha: day == todayDate ? 1 : 0.4,
+                      ),
+                      width: day == todayDate ? todayRingWidth : 1,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 }

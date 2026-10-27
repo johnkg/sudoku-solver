@@ -66,6 +66,9 @@ const iconSmall = 18.0;
 const iconMedium = 28.0;
 const iconHero = 64.0;
 const avatarRadius = 18.0;
+const progressRingSize = 48.0;
+const progressRingStroke = 5.0;
+const weekDotSize = 20.0;
 const spinnerSize = 28.0;
 const spinnerStroke = 3.0;
 

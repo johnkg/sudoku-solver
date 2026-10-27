@@ -13,11 +13,15 @@ class LevelHeader extends StatelessWidget {
     required this.level,
     required this.unlocked,
     required this.blurb,
+    this.progress,
   });
 
   final int level;
   final bool unlocked;
   final String blurb;
+
+  /// How far the player is through the level, such as `2 / 5`.
+  final String? progress;
 
   @override
   Widget build(BuildContext context) {
@@ -74,6 +78,18 @@ class LevelHeader extends StatelessWidget {
               ],
             ),
           ),
+          if (progress != null && unlocked)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: Space.snug,
+                vertical: Space.hair,
+              ),
+              decoration: BoxDecoration(
+                color: scheme.surfaceContainer,
+                borderRadius: BorderRadius.circular(Space.xl),
+              ),
+              child: Text(progress!, style: theme.textTheme.labelMedium),
+            ),
         ],
       ),
     );
