@@ -7,6 +7,7 @@ import '../progress/progress_scope.dart';
 import 'board_view.dart';
 import 'layout.dart';
 import 'quiz.dart';
+import 'section.dart';
 import 'search_dialog.dart';
 
 /// Shows boards where [technique] applies and asks the player to spot it.
@@ -135,6 +136,8 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
           ),
           const SizedBox(height: Space.sm),
+          StepDots(total: questions.length, done: index + (answered ? 1 : 0)),
+          const SizedBox(height: Space.md),
           Text(
             q.placesDigit
                 ? 'A $label is available. Tap the cell it lets you fill.'
@@ -164,17 +167,39 @@ class _QuizScreenState extends State<QuizScreen> {
               child: Text('Check (${marked.length} of ${q.targets.length})'),
             ),
           if (answered) ...[
-            Text(
-              correct! ? 'Correct!' : 'Not quite.',
-              key: const Key('quiz-result'),
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: correct!
-                    ? theme.colorScheme.primary
-                    : theme.colorScheme.error,
+            Card(
+              margin: EdgeInsets.zero,
+              color: correct!
+                  ? theme.colorScheme.tertiaryContainer
+                  : theme.colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.all(Space.lg),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      correct! ? 'Correct!' : 'Not quite.',
+                      key: const Key('quiz-result'),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: correct!
+                            ? theme.colorScheme.onTertiaryContainer
+                            : theme.colorScheme.onErrorContainer,
+                      ),
+                    ),
+                    const SizedBox(height: Space.xs),
+                    Text(
+                      q.step.explanation,
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: correct!
+                            ? theme.colorScheme.onTertiaryContainer
+                            : theme.colorScheme.onErrorContainer,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: Space.xs),
-            Text(q.step.explanation, style: theme.textTheme.bodyLarge),
             const SizedBox(height: Space.md),
             FilledButton(
               key: const Key('quiz-next'),
@@ -225,17 +250,40 @@ class _Results extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(Space.xl),
       children: [
-        Text(
-          'You spotted $score of $total.',
-          key: const Key('quiz-score'),
-          style: theme.textTheme.headlineSmall,
-        ),
-        const SizedBox(height: Space.sm),
-        Text(
-          score == total
-              ? 'Perfect. You can spot a $label.'
-              : 'Re-read the lesson, then try again.',
-          style: theme.textTheme.bodyLarge,
+        Card(
+          margin: EdgeInsets.zero,
+          color: score == total
+              ? theme.colorScheme.tertiaryContainer
+              : theme.colorScheme.primaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(Space.xl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'You spotted $score of $total.',
+                  key: const Key('quiz-score'),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: score == total
+                        ? theme.colorScheme.onTertiaryContainer
+                        : theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+                const SizedBox(height: Space.sm),
+                Text(
+                  score == total
+                      ? 'Perfect. You can spot a $label.'
+                      : 'Re-read the lesson, then try again.',
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: score == total
+                        ? theme.colorScheme.onTertiaryContainer
+                        : theme.colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: Space.lg),
         FilledButton(

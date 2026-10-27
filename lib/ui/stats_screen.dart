@@ -8,6 +8,7 @@ import 'daily_calendar.dart';
 import 'layout.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
+import 'section.dart';
 import 'solve_screen.dart' show formatClock;
 import 'weak_spots.dart';
 
@@ -30,7 +31,12 @@ class StatsScreen extends StatelessWidget {
       return known.isEmpty ? null : known.reduce((a, b) => a < b ? a : b);
     }
 
-    Widget tile(String label, String value, IconData icon) => Expanded(
+    Widget tile(
+      String label,
+      String value,
+      IconData icon, {
+      bool highlight = false,
+    }) => Expanded(
       child: Card(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -39,7 +45,7 @@ class StatsScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              Icon(icon, color: theme.colorScheme.primary),
+              IconChip(icon, highlight: highlight),
               const SizedBox(height: Space.sm),
               Text(
                 value,
@@ -80,7 +86,12 @@ class StatsScreen extends StatelessWidget {
                     '${store.solvedCount}/${puzzleLibrary.length}',
                     Icons.grid_on,
                   ),
-                  tile('Stars', '$stars/$mostStars', Icons.star_outline),
+                  tile(
+                    'Stars',
+                    '$stars/$mostStars',
+                    Icons.star_outline,
+                    highlight: true,
+                  ),
                 ],
               ),
               Row(
@@ -98,18 +109,7 @@ class StatsScreen extends StatelessWidget {
                 ],
               ),
               ..._techniqueSection(context, store),
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: Space.roomy,
-                  bottom: Space.sm,
-                ),
-                child: Text(
-                  'Daily puzzles',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              const SectionTitle('Daily puzzles'),
               Card(
                 key: const Key('daily-calendar'),
                 child: Padding(
@@ -132,18 +132,7 @@ class StatsScreen extends StatelessWidget {
                 ),
               ),
               ..._achievementSection(context, store),
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: Space.roomy,
-                  bottom: Space.sm,
-                ),
-                child: Text(
-                  'By level',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
+              const SectionTitle('By level'),
               for (final level in levelNames.keys)
                 Builder(
                   builder: (context) {
@@ -222,15 +211,7 @@ List<Widget> _techniqueSection(BuildContext context, ProgressStore store) {
   final weak = weakSpots(store);
 
   return [
-    Padding(
-      padding: const EdgeInsets.only(top: Space.roomy, bottom: Space.sm),
-      child: Text(
-        'Techniques',
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ),
+    const SectionTitle('Techniques'),
     if (weak.isNotEmpty)
       Card(
         key: const Key('weak-spots'),
@@ -286,26 +267,18 @@ List<Widget> _achievementSection(BuildContext context, ProgressStore store) {
   final earned = all.where((a) => a.unlocked).length;
 
   return [
-    Padding(
-      padding: const EdgeInsets.only(top: Space.roomy, bottom: Space.sm),
-      child: Text(
-        'Achievements · $earned of ${all.length}',
-        key: const Key('achievements-title'),
-        style: theme.textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+    SectionTitle(
+      'Achievements · $earned of ${all.length}',
+      key: const Key('achievements-title'),
     ),
     for (final a in all)
       Card(
         key: Key('achievement-${a.id}'),
-        color: a.unlocked ? theme.colorScheme.primaryContainer : null,
         child: ListTile(
-          leading: Icon(
+          leading: IconChip(
             a.unlocked ? Icons.emoji_events : a.icon,
-            color: a.unlocked
-                ? theme.colorScheme.onPrimaryContainer
-                : theme.colorScheme.outline,
+            highlight: a.unlocked,
+            muted: !a.unlocked,
           ),
           title: Text(a.title),
           subtitle: Column(
@@ -323,7 +296,9 @@ List<Widget> _achievementSection(BuildContext context, ProgressStore store) {
               ],
             ],
           ),
-          trailing: a.unlocked ? const Icon(Icons.check_circle) : null,
+          trailing: a.unlocked
+              ? Icon(Icons.check_circle, color: theme.colorScheme.primary)
+              : null,
         ),
       ),
   ];
