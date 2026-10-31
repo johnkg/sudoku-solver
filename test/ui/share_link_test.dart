@@ -5,6 +5,7 @@ import 'package:sudoku_solver/progress/progress_store.dart';
 import 'package:sudoku_solver/ui/app.dart';
 import 'package:sudoku_solver/ui/board_view.dart';
 import 'package:sudoku_solver/ui/puzzle_link.dart';
+import 'package:sudoku_solver/ui/solver/puzzle_text.dart';
 import 'package:sudoku_solver/ui/solver_tab.dart';
 
 import '../support.dart';

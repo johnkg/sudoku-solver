@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart' hide Step;
 
 import '../engine/engine.dart';
-import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
 import 'board_legend.dart';
 import 'board_view.dart';
+import 'board_with_panel.dart';
 import 'layout.dart';
-import 'learn_tab.dart';
-import 'link_legend.dart';
-import 'levels.dart';
-import 'step_text.dart';
-import 'technique_choices.dart';
+import 'walkthrough/controls.dart';
+import 'walkthrough/end_panel.dart';
+import 'walkthrough/question.dart';
+import 'walkthrough/step_panel.dart';
 
 /// Steps through the way the solver would crack [start], one move at a time,
 /// explaining each and linking the technique to its lesson.
@@ -47,14 +46,24 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
   final revealedSteps = <int>{};
   final askedSteps = <int>{};
   final firstTry = <int>{};
+
+  // The player's attempt at the step being asked.
   int? selected;
   String? message;
   final wrongChoices = <Technique>{};
   bool missed = false;
 
+  /// The answer to the whole puzzle, used to tell a correct digit that logic
+  /// cannot prove yet from a wrong one.
+  late final Board? answer = solveByBacktracking(boards.first);
+
   @override
   void initState() {
     super.initState();
+    _solveStepByStep();
+  }
+
+  void _solveStepByStep() {
     const solver = Solver();
     var board = widget.start.copy();
     givens =
@@ -79,20 +88,22 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
   /// Whether step [index] is waiting for the player to find the move.
   bool get asking => play && !atEnd && !revealedSteps.contains(index);
 
-  void _go(int to) => setState(() {
-    index = to.clamp(0, steps.length);
+  /// Forgets the player's attempt at the current step.
+  void _clearAttempt() {
     selected = null;
     message = null;
     wrongChoices.clear();
     missed = false;
+  }
+
+  void _go(int to) => setState(() {
+    index = to.clamp(0, steps.length);
+    _clearAttempt();
   });
 
   void _setPlay(bool on) => setState(() {
     play = on;
-    selected = null;
-    message = null;
-    wrongChoices.clear();
-    missed = false;
+    _clearAttempt();
     if (on) {
       revealedSteps
         ..clear()
@@ -102,33 +113,23 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
     }
   });
 
-  void _found() {
+  /// Ends the question for the current step, noting whether the player found
+  /// the move on their own.
+  void _revealStep({required bool found}) {
     ProgressScope.read(context)
-        .recordTechnique(steps[index].technique.name, right: !missed);
+        .recordTechnique(steps[index].technique.name, right: found && !missed);
     askedSteps.add(index);
-    if (!missed) firstTry.add(index);
+    if (found && !missed) firstTry.add(index);
     revealedSteps.add(index);
-    selected = null;
-    message = null;
-    wrongChoices.clear();
+    _clearAttempt();
   }
-
-  void _showMe() => setState(() {
-    ProgressScope.read(context)
-        .recordTechnique(steps[index].technique.name, right: false);
-    askedSteps.add(index);
-    revealedSteps.add(index);
-    selected = null;
-    message = null;
-    wrongChoices.clear();
-  });
 
   void _miss(String text) {
     missed = true;
     message = text;
   }
 
-  late final Board? answer = solveByBacktracking(boards.first);
+  void _showMe() => setState(() => _revealStep(found: false));
 
   void _enter(int digit) {
     final cell = selected;
@@ -136,7 +137,7 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
     final step = steps[index];
     setState(() {
       if (step.placements.any((p) => p.cell == cell && p.digit == digit)) {
-        _found();
+        _revealStep(found: true);
       } else if (step.placements.any((p) => p.cell == cell)) {
         _miss('That cell is the right one to look at, but not that digit.');
       } else if (boards[index].values[cell] != 0) {
@@ -152,95 +153,27 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
     });
   }
 
-  void _choose(Technique t) => setState(() {
-    if (t == steps[index].technique) {
-      _found();
+  void _choose(Technique technique) => setState(() {
+    if (technique == steps[index].technique) {
+      _revealStep(found: true);
     } else {
-      wrongChoices.add(t);
-      _miss('Not ${t.label}: it finds nothing on this board.');
+      wrongChoices.add(technique);
+      _miss('Not ${technique.label}: it finds nothing on this board.');
     }
   });
 
-  void _reveal() => setState(() => solution = solveByBacktracking(boards.last));
+  void _revealAnswer() =>
+      setState(() => solution = solveByBacktracking(boards.last));
+
+  String? get _score => play && askedSteps.isNotEmpty
+      ? 'You found ${firstTry.length} of ${askedSteps.length} moves on your '
+            'own.'
+      : null;
 
   @override
   Widget build(BuildContext context) {
-    final board = solution ?? boards[index];
     final step = atEnd ? null : steps[index];
     final hidden = asking;
-
-    final boardView = BoardView(
-      board: board,
-      givens: givens,
-      showCandidates: solution == null,
-      step: hidden ? null : step,
-      candidateFocus: allNotes || hidden ? null : step,
-      selected: hidden ? selected : null,
-      onCellTap: hidden ? (c) => setState(() => selected = c) : null,
-    );
-
-    final panel = Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        SegmentedButton<bool>(
-          showSelectedIcon: false,
-          segments: const [
-            ButtonSegment(
-              value: false,
-              label: Text('Watch', key: Key('mode-watch')),
-              icon: Icon(Icons.visibility_outlined),
-            ),
-            ButtonSegment(
-              value: true,
-              label: Text('Your turn', key: Key('mode-play')),
-              icon: Icon(Icons.touch_app_outlined),
-            ),
-          ],
-          selected: {play},
-          onSelectionChanged: (s) => _setPlay(s.first),
-        ),
-        const SizedBox(height: Space.md),
-        if (step != null && !hidden) ...[
-          const BoardLegend(),
-          const SizedBox(height: Space.lg),
-        ] else
-          const SizedBox(height: Space.lg),
-        if (step != null && hidden)
-          _Question(
-            step: step,
-            number: index + 1,
-            of: steps.length,
-            board: boards[index],
-            selected: selected,
-            message: message,
-            wrongChoices: wrongChoices,
-            onDigit: _enter,
-            onChoose: _choose,
-            onShowMe: _showMe,
-          )
-        else if (step != null)
-          _StepPanel(step: step, number: index + 1, of: steps.length),
-        if (atEnd)
-          _EndPanel(
-            solved: solved,
-            revealed: solution != null,
-            steps: steps,
-            onReveal: _reveal,
-            score: play && askedSteps.isNotEmpty
-                ? 'You found ${firstTry.length} of ${askedSteps.length} moves '
-                      'on your own.'
-                : null,
-          ),
-        const SizedBox(height: Space.lg),
-        _Controls(
-          index: index,
-          last: steps.length,
-          canAdvance: !hidden,
-          slider: !play,
-          onChanged: _go,
-        ),
-      ],
-    );
 
     return Scaffold(
       appBar: AppBar(
@@ -256,366 +189,60 @@ class _WalkthroughScreenState extends State<WalkthroughScreen> {
         ],
       ),
       body: SafeArea(
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final wide = useSideBySide(constraints);
-            if (wide) {
-              return Padding(
-                padding: const EdgeInsets.all(Space.lg),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      flex: boardFlex,
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: ConstrainedBox(
-                          constraints: BoxConstraints(
-                            maxWidth:
-                                constraints.maxHeight - boardVerticalMargin,
-                          ),
-                          child: boardView,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: Space.xl),
-                    Expanded(
-                      flex: panelFlex,
-                      child: SingleChildScrollView(child: panel),
-                    ),
-                  ],
-                ),
-              );
-            }
-            return Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(
-                  maxWidth: boardScreenMaxWidth,
-                ),
-                child: ListView(
-                  padding: const EdgeInsets.all(Space.lg),
-                  children: [
-                    boardView,
-                    const SizedBox(height: Space.lg),
-                    panel,
-                  ],
-                ),
-              ),
-            );
-          },
+        child: BoardWithPanel(
+          board: BoardView(
+            board: solution ?? boards[index],
+            givens: givens,
+            showCandidates: solution == null,
+            step: hidden ? null : step,
+            candidateFocus: allNotes || hidden ? null : step,
+            selected: hidden ? selected : null,
+            onCellTap: hidden ? (c) => setState(() => selected = c) : null,
+          ),
+          panel: _buildPanel(step, hidden: hidden),
         ),
       ),
     );
   }
-}
 
-class _StepPanel extends StatelessWidget {
-  const _StepPanel({
-    required this.step,
-    required this.number,
-    required this.of,
-  });
-
-  final Step step;
-  final int number;
-  final int of;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildPanel(Step? step, {required bool hidden}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Step $number of $of',
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: Space.sm),
-        TechniqueLink(technique: step.technique),
+        WalkthroughModeToggle(play: play, onChanged: _setPlay),
         const SizedBox(height: Space.md),
-        Text(step.explanation, style: theme.textTheme.bodyLarge),
-        LinkLegend(step: step),
-        const SizedBox(height: Space.md),
-        Card(
-          color: theme.colorScheme.secondaryContainer,
-          child: Padding(
-            padding: const EdgeInsets.all(Space.md),
-            child: Text(
-              describeResult(step),
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSecondaryContainer,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// A chip that opens the lesson for [technique].
-class TechniqueLink extends StatelessWidget {
-  const TechniqueLink({super.key, required this.technique, this.count});
-
-  final Technique technique;
-  final int? count;
-
-  @override
-  Widget build(BuildContext context) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: ActionChip(
-        key: Key('technique-${technique.name}'),
-        avatar: const Icon(Icons.school_outlined, size: iconSmall),
-        label: Text(
-          count == null
-              ? '${technique.label} · ${levelNames[technique.level]}'
-              : '${technique.label} × $count',
-        ),
-        tooltip: 'Learn about ${technique.label}',
-        onPressed: () => openLesson(context, lessonFor(technique)),
-      ),
-    );
-  }
-}
-
-class _EndPanel extends StatelessWidget {
-  const _EndPanel({
-    required this.solved,
-    required this.revealed,
-    required this.steps,
-    required this.onReveal,
-    this.score,
-  });
-
-  final bool solved;
-  final bool revealed;
-  final List<Step> steps;
-  final VoidCallback onReveal;
-  final String? score;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final counts = <Technique, int>{};
-    for (final step in steps) {
-      counts[step.technique] = (counts[step.technique] ?? 0) + 1;
-    }
-    final used = Technique.values.where(counts.containsKey);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          solved
-              ? 'Solved in ${steps.length} steps.'
-              : revealed
-              ? 'The rest was filled in by trial and error.'
-              : 'The solver is stuck.',
-          style: theme.textTheme.headlineSmall,
-        ),
-        if (score != null) ...[
-          const SizedBox(height: Space.sm),
-          Text(
-            score!,
-            key: const Key('score'),
-            style: theme.textTheme.titleMedium,
-          ),
-        ],
-        const SizedBox(height: Space.sm),
-        if (!solved && !revealed) ...[
-          Text(
-            'None of the techniques in this app finds another move. The rest '
-            'needs something harder, or trial and error.',
-            style: theme.textTheme.bodyLarge,
-          ),
-          const SizedBox(height: Space.sm),
-          OutlinedButton(
-            key: const Key('reveal'),
-            onPressed: onReveal,
-            child: const Text('Show the answer'),
-          ),
-        ],
-        if (used.isNotEmpty) ...[
-          const SizedBox(height: Space.lg),
-          Text('Techniques used', style: theme.textTheme.titleMedium),
-          const SizedBox(height: Space.xs),
-          Wrap(
-            spacing: Space.sm,
-            children: [
-              for (final t in used)
-                TechniqueLink(technique: t, count: counts[t]),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _Controls extends StatelessWidget {
-  const _Controls({
-    required this.index,
-    required this.last,
-    required this.canAdvance,
-    required this.slider,
-    required this.onChanged,
-  });
-
-  final int index;
-  final int last;
-
-  /// False while the player still has to find the move.
-  final bool canAdvance;
-  final bool slider;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        if (last > 1 && slider)
-          Slider(
-            value: index.toDouble(),
-            max: last.toDouble(),
-            divisions: last,
-            label: index == last ? 'Done' : 'Step ${index + 1}',
-            onChanged: (v) => onChanged(v.round()),
-          ),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton.icon(
-                key: const Key('prev-step'),
-                onPressed: index == 0 ? null : () => onChanged(index - 1),
-                icon: const Icon(Icons.chevron_left),
-                label: const Text('Back'),
-              ),
-            ),
-            const SizedBox(width: Space.md),
-            Expanded(
-              child: FilledButton.icon(
-                key: const Key('next-step'),
-                onPressed: index == last || !canAdvance
-                    ? null
-                    : () => onChanged(index + 1),
-                icon: const Icon(Icons.chevron_right),
-                label: const Text('Next'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-/// Asks the player to find the move of [step] on [board].
-class _Question extends StatelessWidget {
-  const _Question({
-    required this.step,
-    required this.number,
-    required this.of,
-    required this.board,
-    required this.selected,
-    required this.message,
-    required this.wrongChoices,
-    required this.onDigit,
-    required this.onChoose,
-    required this.onShowMe,
-  });
-
-  final Step step;
-  final int number;
-  final int of;
-  final Board board;
-  final int? selected;
-  final String? message;
-  final Set<Technique> wrongChoices;
-  final ValueChanged<int> onDigit;
-  final ValueChanged<Technique> onChoose;
-  final VoidCallback onShowMe;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final places = step.placements.isNotEmpty;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Step $number of $of · your turn',
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.primary,
-          ),
-        ),
-        const SizedBox(height: Space.sm),
-        Text(
-          places
-              ? 'Find a digit you can place for certain. Tap its cell, then '
-                    'choose the digit.'
-              : 'No digit can be placed yet, but a technique lets you remove '
-                    'candidates. Which one finds a move on this board?',
-          style: theme.textTheme.bodyLarge,
-        ),
-        const SizedBox(height: Space.md),
-        if (places)
-          Row(
-            children: [
-              for (var d = 1; d <= maxDigit; d++)
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: Space.hair),
-                    child: FilledButton.tonal(
-                      key: Key('play-digit-$d'),
-                      style: FilledButton.styleFrom(
-                        padding: EdgeInsets.zero,
-                        minimumSize: const Size(0, minTapHeight),
-                      ),
-                      onPressed: selected == null ? null : () => onDigit(d),
-                      child: Text(
-                        '$d',
-                        style: const TextStyle(fontSize: keypadFontSize),
-                      ),
-                    ),
-                  ),
-                ),
-            ],
+        if (step != null && !hidden) const BoardLegend(),
+        const SizedBox(height: Space.lg),
+        if (step != null && hidden)
+          WalkthroughQuestion(
+            step: step,
+            number: index + 1,
+            of: steps.length,
+            board: boards[index],
+            selected: selected,
+            message: message,
+            wrongChoices: wrongChoices,
+            onDigit: _enter,
+            onChoose: _choose,
+            onShowMe: _showMe,
           )
-        else
-          Wrap(
-            spacing: Space.sm,
-            runSpacing: Space.xs,
-            children: [
-              for (final t in techniqueChoices(board, step.technique))
-                ChoiceChip(
-                  key: Key('choice-${t.name}'),
-                  label: Text(t.label),
-                  selected: false,
-                  onSelected: wrongChoices.contains(t)
-                      ? null
-                      : (_) => onChoose(t),
-                ),
-            ],
+        else if (step != null)
+          WalkthroughStepPanel(step: step, number: index + 1, of: steps.length),
+        if (atEnd)
+          WalkthroughEndPanel(
+            solved: solved,
+            revealed: solution != null,
+            steps: steps,
+            onReveal: _revealAnswer,
+            score: _score,
           ),
-        if (message != null) ...[
-          const SizedBox(height: Space.sm),
-          Text(
-            message!,
-            key: const Key('feedback'),
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.error,
-            ),
-          ),
-        ],
-        const SizedBox(height: Space.sm),
-        TextButton(
-          key: const Key('show-me'),
-          onPressed: onShowMe,
-          child: const Text('Show me'),
+        const SizedBox(height: Space.lg),
+        WalkthroughControls(
+          index: index,
+          last: steps.length,
+          canAdvance: !hidden,
+          showSlider: !play,
+          onChanged: _go,
         ),
       ],
     );

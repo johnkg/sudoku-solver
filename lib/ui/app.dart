@@ -4,6 +4,7 @@ import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import '../settings/settings.dart';
 import 'cheat_sheet_screen.dart';
+import 'confirm_dialog.dart';
 import 'learn_tab.dart';
 import 'navigation.dart';
 import 'practice_tab.dart';
@@ -71,27 +72,15 @@ class _AppShellState extends State<AppShell> {
       case _MenuAction.unlockAll:
         store.unlockAllLevels();
       case _MenuAction.reset:
-        final confirmed = await showDialog<bool>(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Reset progress?'),
-            content: const Text(
+        final confirmed = await confirm(
+          context,
+          title: 'Reset progress?',
+          message:
               'This forgets every solved puzzle, every game in progress, and '
               'locks the levels again.',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(context, true),
-                child: const Text('Reset'),
-              ),
-            ],
-          ),
+          confirmLabel: 'Reset',
         );
-        if (confirmed ?? false) store.reset();
+        if (confirmed) store.reset();
     }
   }
 
