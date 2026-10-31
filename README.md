@@ -61,6 +61,7 @@ lib/
   settings/   player settings
   scan/       photo scan bridge (web only; a stub elsewhere)
   ui/         screens and widgets
+    solve/        the parts of the Solve screen (board tools, pad, stats, summary)
   util/       small shared helpers: text, clock and day-key formatting
 tool/         command-line scripts (solve, curate puzzles, coverage check)
 test/         engine, progress and UI tests
