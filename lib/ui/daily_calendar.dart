@@ -1,12 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../util/text.dart' show formatDayKey;
+import '../util/text.dart' show formatDayKey, monthName;
 import 'layout.dart';
-
-const _monthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
-  'September', 'October', 'November', 'December', //
-];
 
 /// A month at a time, with the days the daily puzzle was solved filled in.
 class DailyCalendar extends StatefulWidget {
@@ -23,6 +18,9 @@ class DailyCalendar extends StatefulWidget {
 class _DailyCalendarState extends State<DailyCalendar> {
   /// A calendar wider than this would be taller than the screen.
   static const _maxWidth = 360.0;
+
+  /// Gap around each day's circle.
+  static const _dayMargin = 3.0;
 
   late DateTime month = DateTime(widget.today.year, widget.today.month);
 
@@ -68,7 +66,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
                 ),
                 Expanded(
                   child: Text(
-                    '${_monthNames[month.month - 1]} ${month.year}',
+                    '${monthName(month)} ${month.year}',
                     key: const Key('cal-title'),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleSmall,
@@ -117,11 +115,11 @@ class _DailyCalendarState extends State<DailyCalendar> {
                       final future = date.isAfter(today);
                       return Semantics(
                         label:
-                            '${_monthNames[month.month - 1]} $day'
+                            '${monthName(month)} $day'
                             '${solved ? ', solved' : ''}',
                         child: Container(
                           key: Key('cal-day-${formatDayKey(date)}'),
-                          margin: const EdgeInsets.all(3),
+                          margin: const EdgeInsets.all(_dayMargin),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
                             color: solved ? theme.colorScheme.primary : null,

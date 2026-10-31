@@ -42,6 +42,9 @@ ColorScheme _scheme(Brightness brightness) {
   );
 }
 
+const _appBarTitleFontSize = 20.0;
+const _navigationLabelFontSize = 12.0;
+
 ThemeData buildTheme(Brightness brightness) {
   final scheme = _scheme(brightness);
   final shape = RoundedRectangleBorder(
@@ -58,7 +61,7 @@ ThemeData buildTheme(Brightness brightness) {
       scrolledUnderElevation: 0,
       titleTextStyle: TextStyle(
         color: scheme.onSurface,
-        fontSize: 20,
+        fontSize: _appBarTitleFontSize,
         fontWeight: FontWeight.w800,
         letterSpacing: -0.3,
       ),
@@ -77,7 +80,7 @@ ThemeData buildTheme(Brightness brightness) {
       indicatorColor: scheme.primaryContainer,
       labelTextStyle: WidgetStatePropertyAll(
         TextStyle(
-          fontSize: 12,
+          fontSize: _navigationLabelFontSize,
           fontWeight: FontWeight.w600,
           color: scheme.onSurfaceVariant,
         ),
@@ -87,7 +90,7 @@ ThemeData buildTheme(Brightness brightness) {
       style: FilledButton.styleFrom(
         minimumSize: const Size(0, minTapHeight),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(keyRadius + 2),
+          borderRadius: BorderRadius.circular(buttonRadius),
         ),
         textStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),

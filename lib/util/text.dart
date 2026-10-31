@@ -20,3 +20,18 @@ String formatDayKey(DateTime date) =>
     '${date.year.toString().padLeft(4, '0')}-'
     '${date.month.toString().padLeft(2, '0')}-'
     '${date.day.toString().padLeft(2, '0')}';
+
+const _monthNames = [
+  'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August',
+  'September', 'October', 'November', 'December', //
+];
+
+/// How many letters of a month's name make its short form: `Oct`.
+const _shortMonthLength = 3;
+
+/// The full name of [date]'s month: `October`.
+String monthName(DateTime date) => _monthNames[date.month - 1];
+
+/// The short name of [date]'s month: `Oct`.
+String shortMonthName(DateTime date) =>
+    monthName(date).substring(0, _shortMonthLength);

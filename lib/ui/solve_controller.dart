@@ -219,12 +219,12 @@ class SolveController extends ChangeNotifier {
   /// Moves the selection by whole cells, staying on the board.
   void moveSelection(int rowDelta, int columnDelta) {
     final current = selected ?? Board.cellCount ~/ 2; // the centre cell
-    final row = (Board.rowOf(current) + rowDelta).clamp(0, Board.size - 1);
-    final column = (Board.columnOf(current) + columnDelta).clamp(
-      0,
-      Board.size - 1,
+    select(
+      Board.clampedCellAt(
+        Board.rowOf(current) + rowDelta,
+        Board.columnOf(current) + columnDelta,
+      ),
     );
-    select(Board.cellAt(row, column));
   }
 
   void setMode(EntryMode value) {

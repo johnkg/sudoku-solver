@@ -34,13 +34,42 @@ List<int> clueFloorsFor(int level) => switch (level) {
   _ => const [0, 0, 24],
 };
 
-/// Generates random puzzles until one rates at exactly [level] (1-5) using
-/// [techniques], and returns it. Returns null after [maxAttempts] tries or once [isCancelled]
-/// says to stop.
+/// A random puzzle whose clue floor is picked from [clueFloors].
+Board _generateWithRandomFloor(Random random, List<int> clueFloors) =>
+    generatePuzzle(
+      random,
+      minClues: clueFloors[random.nextInt(clueFloors.length)],
+    );
+
+/// Calls [tryOnce] up to [maxAttempts] times and returns the first non-null
+/// result. Returns null once [isCancelled] says to stop, and [whenExhausted]
+/// (null by default) after the last attempt.
 ///
-/// Generating a puzzle takes tens of milliseconds, so [yieldTurn] runs between
-/// attempts to let the caller keep the app responsive. By default it waits one
-/// event-loop turn.
+/// Generating a puzzle takes tens of milliseconds, so [yieldTurn] runs
+/// between attempts to let the caller keep the app responsive. By default it
+/// waits one event-loop turn.
+Future<T?> _searchAttempts<T>({
+  required int maxAttempts,
+  required T? Function(int attempt) tryOnce,
+  T? Function()? whenExhausted,
+  bool Function()? isCancelled,
+  Future<void> Function()? yieldTurn,
+}) async {
+  for (var attempt = 0; attempt < maxAttempts; attempt++) {
+    if (isCancelled?.call() ?? false) return null;
+
+    final result = tryOnce(attempt);
+    if (result != null) return result;
+
+    await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
+  }
+  return whenExhausted?.call();
+}
+
+/// Generates random puzzles until one rates at exactly [level] (1-5) using
+/// [techniques], and returns it. Returns null after [maxAttempts] tries or once
+/// [isCancelled] says to stop. [yieldTurn] runs between attempts (see
+/// [_searchAttempts]).
 Future<FoundPuzzle?> findPuzzleOfLevel(
   int level,
   Random random, {
@@ -48,21 +77,18 @@ Future<FoundPuzzle?> findPuzzleOfLevel(
   List<SolvingTechnique> techniques = defaultTechniques,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
-}) async {
+}) {
   final floors = clueFloorsFor(level);
-  for (var attempt = 0; attempt < maxAttempts; attempt++) {
-    if (isCancelled?.call() ?? false) return null;
-
-    final puzzle = generatePuzzle(
-      random,
-      minClues: floors[random.nextInt(floors.length)],
-    );
-    final rating = ratePuzzle(puzzle, techniques: techniques);
-    if (rating.level == level) return FoundPuzzle(puzzle, rating);
-
-    await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
-  }
-  return null;
+  return _searchAttempts(
+    maxAttempts: maxAttempts,
+    isCancelled: isCancelled,
+    yieldTurn: yieldTurn,
+    tryOnce: (_) {
+      final puzzle = _generateWithRandomFloor(random, floors);
+      final rating = ratePuzzle(puzzle, techniques: techniques);
+      return rating.level == level ? FoundPuzzle(puzzle, rating) : null;
+    },
+  );
 }
 
 /// Tries spent looking for a puzzle that needs a technique before one that
@@ -86,26 +112,25 @@ Future<FoundPuzzle?> findPuzzleRequiring(
   int preferAttempts = defaultPreferAttempts,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
-}) async {
+}) {
   final floors = [...clueFloorsFor(technique.level), ..._extraFloors];
   FoundPuzzle? uses;
-  for (var attempt = 0; attempt < maxAttempts; attempt++) {
-    if (isCancelled?.call() ?? false) return null;
-
-    final puzzle = generatePuzzle(
-      random,
-      minClues: floors[random.nextInt(floors.length)],
-    );
-    final rating = ratePuzzle(puzzle);
-    if (rating.required == technique) return FoundPuzzle(puzzle, rating);
-    if (rating.uses.containsKey(technique)) {
-      uses ??= FoundPuzzle(puzzle, rating);
-      if (attempt >= preferAttempts) return uses;
-    }
-
-    await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
-  }
-  return uses;
+  return _searchAttempts(
+    maxAttempts: maxAttempts,
+    isCancelled: isCancelled,
+    yieldTurn: yieldTurn,
+    whenExhausted: () => uses,
+    tryOnce: (attempt) {
+      final puzzle = _generateWithRandomFloor(random, floors);
+      final rating = ratePuzzle(puzzle);
+      if (rating.required == technique) return FoundPuzzle(puzzle, rating);
+      if (rating.uses.containsKey(technique)) {
+        uses ??= FoundPuzzle(puzzle, rating);
+        if (attempt >= preferAttempts) return uses;
+      }
+      return null;
+    },
+  );
 }
 
 /// A board partway through a solve where [step], a use of its technique, is
@@ -131,28 +156,25 @@ Future<TechniqueMoment?> findMomentOf(
   int maxAttempts = defaultMaxAttempts,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
-}) async {
+}) {
   const solver = Solver();
-  const floors = _momentClueFloors;
-  for (var attempt = 0; attempt < maxAttempts; attempt++) {
-    if (isCancelled?.call() ?? false) return null;
-
-    final board = generatePuzzle(
-      random,
-      minClues: floors[random.nextInt(floors.length)],
-    );
-    for (
-      var step = solver.nextStep(board);
-      step != null;
-      step = solver.nextStep(board)
-    ) {
-      if (step.technique == technique) {
-        return TechniqueMoment(board.copy(), step);
+  return _searchAttempts(
+    maxAttempts: maxAttempts,
+    isCancelled: isCancelled,
+    yieldTurn: yieldTurn,
+    tryOnce: (_) {
+      final board = _generateWithRandomFloor(random, _momentClueFloors);
+      for (
+        var step = solver.nextStep(board);
+        step != null;
+        step = solver.nextStep(board)
+      ) {
+        if (step.technique == technique) {
+          return TechniqueMoment(board.copy(), step);
+        }
+        board.applyStep(step);
       }
-      board.applyStep(step);
-    }
-
-    await (yieldTurn?.call() ?? Future<void>.delayed(Duration.zero));
-  }
-  return null;
+      return null;
+    },
+  );
 }

@@ -72,14 +72,12 @@ class BoardView extends StatelessWidget {
                 ? null
                 : (details) {
                     final cell = constraints.maxWidth / Board.size;
-                    final column = (details.localPosition.dx / cell)
-                        .floor()
-                        .clamp(0, Board.size - 1);
-                    final row = (details.localPosition.dy / cell).floor().clamp(
-                      0,
-                      Board.size - 1,
+                    onCellTap!(
+                      Board.clampedCellAt(
+                        (details.localPosition.dy / cell).floor(),
+                        (details.localPosition.dx / cell).floor(),
+                      ),
                     );
-                    onCellTap!(Board.cellAt(row, column));
                   },
             child: CustomPaint(
               painter: _BoardPainter(

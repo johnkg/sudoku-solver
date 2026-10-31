@@ -4,11 +4,9 @@ import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
 import 'layout.dart';
-import 'navigation.dart';
 import 'practice_card.dart';
 import 'puzzle_library.dart';
 import 'search_dialog.dart';
-import 'solve_screen.dart';
 
 /// Looks for a random puzzle built around [technique], then opens it. With
 /// [replace] the current screen is swapped for the new puzzle.
@@ -36,13 +34,11 @@ Future<void> playTechniquePuzzle(
     text: found.text,
     technique: found.rating.required ?? technique,
   );
-  openScreen(
+  openPracticePuzzle(
     navigator,
-    (context) => SolveScreen(
-      puzzle: entry,
-      recordProgress: false,
-      onNewPuzzle: () => playTechniquePuzzle(context, technique, replace: true),
-    ),
+    entry,
+    playAnother: (context) =>
+        playTechniquePuzzle(context, technique, replace: true),
     replace: replace,
   );
 }
