@@ -1,4 +1,4 @@
-import 'solver_tab.dart' show parsePuzzleText;
+import 'solver/puzzle_text.dart';
 
 /// A link to [base]'s page that opens with [cells] already entered on the
 /// Solver tab. Blanks are written as dots, so the link reads like the

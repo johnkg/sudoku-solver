@@ -1,6 +1,27 @@
 import 'package:flutter/material.dart';
 
 import 'layout.dart';
+import 'navigation.dart';
+import 'puzzle_library.dart';
+import 'solve_screen.dart';
+
+/// Opens [entry] as a practice puzzle: not saved, and it does not count
+/// towards unlocking levels. [playAnother] runs from the solve screen's "new
+/// puzzle" button and gets that screen's context.
+void openPracticePuzzle(
+  NavigatorState navigator,
+  PuzzleEntry entry, {
+  required void Function(BuildContext context) playAnother,
+  required bool replace,
+}) => openScreen(
+  navigator,
+  (context) => SolveScreen(
+    puzzle: entry,
+    recordProgress: false,
+    onNewPuzzle: () => playAnother(context),
+  ),
+  replace: replace,
+);
 
 /// A card on the Practice tab: a title, a line saying what it does, and the
 /// controls to choose and start.

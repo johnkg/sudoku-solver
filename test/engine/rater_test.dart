@@ -12,7 +12,7 @@ void main() {
         ),
       );
       expect(rating.unique, isTrue);
-      expect(rating.solvable, isTrue);
+      expect(rating.required, isNotNull);
       expect(rating.level, 1);
       expect(rating.stepCount, greaterThan(0));
     });
@@ -48,7 +48,7 @@ void main() {
         ),
       );
       expect(rating.unique, isTrue);
-      expect(rating.solvable, isFalse);
+      expect(rating.required, isNull);
       expect(rating.level, 0);
       expect(rating.required, isNull);
     });
@@ -56,7 +56,7 @@ void main() {
     test('a puzzle with several solutions is not rated', () {
       final rating = ratePuzzle(Board.parse('.' * 81));
       expect(rating.unique, isFalse);
-      expect(rating.solvable, isFalse);
+      expect(rating.required, isNull);
     });
 
     test('uses are counted in technique order', () {

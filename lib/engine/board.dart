@@ -37,6 +37,11 @@ class Board {
   /// The cell at [row] and [column], both counted from 0.
   static int cellAt(int row, int column) => row * size + column;
 
+  /// Like [cellAt], but a [row] or [column] off the grid is moved to the
+  /// nearest edge.
+  static int clampedCellAt(int row, int column) =>
+      cellAt(row.clamp(0, size - 1), column.clamp(0, size - 1));
+
   /// Parses [cellCount] (81) characters: `1`-`9` for givens, `0` or `.` for blanks.
   /// Whitespace is ignored. Throws [FormatException] on bad input or if the
   /// givens already break a rule.

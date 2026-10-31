@@ -12,15 +12,15 @@ import 'search_dialog.dart';
 import 'solve_screen.dart';
 import 'stars.dart';
 
+/// Ring of a week dot for a day other than today: thinner and fainter.
+const _otherDayRingWidth = 1.0;
+const _otherDayRingAlpha = 0.4;
+
 const _weekdays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-const _months = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec', //
-];
 
 /// `Sat, Oct 10`.
 String dailyDateLabel(DateTime date) =>
-    '${_weekdays[date.weekday - 1]}, ${_months[date.month - 1]} ${date.day}';
+    '${_weekdays[date.weekday - 1]}, ${shortMonthName(date)} ${date.day}';
 
 /// Opens today's daily puzzle, finding it first if this is the first time
 /// today. Everyone gets the same puzzle on the same day.
@@ -200,9 +200,11 @@ class _WeekDots extends StatelessWidget {
                         : null,
                     border: Border.all(
                       color: color.withValues(
-                        alpha: day == todayDate ? 1 : 0.4,
+                        alpha: day == todayDate ? 1 : _otherDayRingAlpha,
                       ),
-                      width: day == todayDate ? todayRingWidth : 1,
+                      width: day == todayDate
+                          ? todayRingWidth
+                          : _otherDayRingWidth,
                     ),
                   ),
                 ),

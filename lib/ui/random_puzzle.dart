@@ -5,11 +5,9 @@ import 'package:flutter/material.dart';
 import '../engine/engine.dart';
 import 'layout.dart';
 import 'levels.dart';
-import 'navigation.dart';
 import 'practice_card.dart';
 import 'puzzle_library.dart';
 import 'search_dialog.dart';
-import 'solve_screen.dart';
 
 /// The search that finds a puzzle of a level. Tests replace it, for example
 /// with one that never finishes, to test cancelling.
@@ -48,13 +46,10 @@ Future<void> playRandomPuzzle(
     text: found.text,
     technique: found.rating.required!,
   );
-  openScreen(
+  openPracticePuzzle(
     navigator,
-    (context) => SolveScreen(
-      puzzle: entry,
-      recordProgress: false,
-      onNewPuzzle: () => playRandomPuzzle(context, level, replace: true),
-    ),
+    entry,
+    playAnother: (context) => playRandomPuzzle(context, level, replace: true),
     replace: replace,
   );
 }

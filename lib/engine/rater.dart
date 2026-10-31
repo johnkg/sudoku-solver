@@ -26,8 +26,6 @@ class PuzzleRating {
   /// techniques appear in [Technique].
   final Map<Technique, int> uses;
 
-  bool get solvable => required != null;
-
   /// 1 (beginner) to 5 (expert), or 0 when the engine cannot solve it.
   int get level => required?.level ?? 0;
 

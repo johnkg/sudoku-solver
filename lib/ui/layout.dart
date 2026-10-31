@@ -39,6 +39,9 @@ const keypadFontSize = 20.0;
 const cardRadius = 16.0;
 const keyRadius = 12.0;
 
+/// Corner rounding of the filled buttons, a little rounder than the keys.
+const buttonRadius = keyRadius + 2;
+
 /// Opacity of controls and digits that cannot be used right now, from the
 /// Material guidelines.
 const disabledOpacity = 0.38;

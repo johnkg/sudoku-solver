@@ -12,6 +12,10 @@ import 'navigation.dart';
 import 'unlocking.dart';
 import 'weak_spots.dart';
 
+/// How faded the small text on the dark "next up" card is, against its title.
+const _nextUpLabelAlpha = 0.7;
+const _nextUpTaglineAlpha = 0.8;
+
 /// The list of technique lessons, grouped by level. A level opens once the
 /// one below is solved.
 class LearnTab extends StatelessWidget {
@@ -169,7 +173,9 @@ class _ProgressHeader extends StatelessWidget {
                   Text(
                     'NEXT UP',
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: scheme.surface.withValues(alpha: 0.7),
+                      color: scheme.surface.withValues(
+                        alpha: _nextUpLabelAlpha,
+                      ),
                       letterSpacing: 1.2,
                     ),
                   ),
@@ -184,7 +190,9 @@ class _ProgressHeader extends StatelessWidget {
                   Text(
                     next.tagline,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      color: scheme.surface.withValues(alpha: 0.8),
+                      color: scheme.surface.withValues(
+                        alpha: _nextUpTaglineAlpha,
+                      ),
                     ),
                   ),
                   const SizedBox(height: Space.md),
