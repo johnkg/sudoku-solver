@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../engine/engine.dart';
 import 'hint_ladder.dart';
+import 'saved_game.dart';
 
 /// What a digit button does to the selected cell: place the digit, or toggle
 /// it as a note (pencil mark).
@@ -33,11 +34,8 @@ class SolveController extends ChangeNotifier {
   final Board solution;
   final Set<int> givens;
 
-  /// Boards and notes before each change, newest last. [technique] is set
-  /// when the change was a solver step the player applied, [note] when it
-  /// only edited notes.
-  final List<({Board board, List<int> marks, Technique? technique, bool note})>
-  _history = [];
+  /// The state before each change, newest last.
+  final List<Move> _history = [];
 
   /// The player's own notes: a bit mask of digits per cell, empty at the
   /// start. They are separate from the board's candidates, which the solver
@@ -385,23 +383,15 @@ class SolveController extends ChangeNotifier {
   }
 
   /// Everything needed to resume this session later.
-  Map<String, Object?> toJson() => {
-    'board': _encode(_board),
-    'history': [
-      for (final move in _history)
-        {
-          'board': _encode(move.board),
-          'marks': move.marks,
-          'note': move.note,
-          'technique': move.technique?.name,
-        },
-    ],
-    'marks': marks,
-    'seconds': seconds.value,
-    'mistakes': mistakes,
-    'hintsUsed': hintsUsed,
-    'movesShown': movesShown,
-  };
+  Map<String, Object?> toJson() => SavedGame(
+    board: _board,
+    history: _history,
+    marks: marks,
+    seconds: seconds.value,
+    mistakes: mistakes,
+    hintsUsed: hintsUsed,
+    movesShown: movesShown,
+  ).toJson();
 
   /// Resumes a session saved by [toJson]. Throws if the data is malformed or
   /// does not fit the puzzle, so callers can fall back to a fresh start.
@@ -410,68 +400,20 @@ class SolveController extends ChangeNotifier {
     Map<String, Object?> json,
   ) {
     final controller = SolveController(puzzleText);
-    final board = controller._decode(json['board']);
-    final history = [
-      for (final entry in json['history']! as List<Object?>)
-        if (entry! as Map<String, Object?> case final move)
-          (
-            board: controller._decode(move['board']),
-            marks: _decodeMarks(move['marks']),
-            note: move['note'] == true,
-            technique: switch (move['technique']) {
-              null => null,
-              final String name => Technique.values.byName(name),
-              _ => throw const FormatException('Bad technique'),
-            },
-          ),
-    ];
-    controller
-      .._board = board
-      ..marks = _decodeMarks(json['marks'])
-      .._history.addAll(history)
-      ..seconds.value = json['seconds'] as int? ?? 0
-      ..mistakes = json['mistakes']! as int
-      ..hintsUsed = json['hintsUsed']! as int
-      ..movesShown = json['movesShown']! as int;
-    return controller;
-  }
-
-  /// Notes saved before notes existed are empty.
-  static List<int> _decodeMarks(Object? data) {
-    if (data == null) return List.filled(Board.cellCount, 0);
-    final list = (data as List<Object?>).cast<int>();
-    if (list.length != Board.cellCount ||
-        list.any((m) => m < 0 || m > allDigitsMask)) {
-      throw const FormatException('Bad notes');
-    }
-    return List.of(list);
-  }
-
-  static Map<String, Object?> _encode(Board board) => {
-    'values': board.values,
-    'candidates': board.candidates,
-  };
-
-  /// Reads a board and checks it agrees with the puzzle and its solution.
-  Board _decode(Object? data) {
-    final map = data! as Map<String, Object?>;
-    final board = Board.fromState(
-      (map['values']! as List<Object?>).cast<int>(),
-      (map['candidates']! as List<Object?>).cast<int>(),
+    final saved = SavedGame.fromJson(
+      json,
+      start: controller._start,
+      solution: controller.solution,
     );
-    for (var i = 0; i < Board.cellCount; i++) {
-      final value = board.values[i];
-      if (givens.contains(i) && value != _start.values[i]) {
-        throw const FormatException('Saved board changes a given');
-      }
-      if (value != 0 && value != solution.values[i]) {
-        throw const FormatException('Saved board has a wrong digit');
-      }
-      if (value == 0 && !hasDigit(board.candidates[i], solution.values[i])) {
-        throw const FormatException('Saved board lost the right candidate');
-      }
-    }
-    return board;
+    controller
+      .._board = saved.board
+      ..marks = saved.marks
+      .._history.addAll(saved.history)
+      ..seconds.value = saved.seconds
+      ..mistakes = saved.mistakes
+      ..hintsUsed = saved.hintsUsed
+      ..movesShown = saved.movesShown;
+    return controller;
   }
 
   /// Adds a second to the clock, unless paused or solved.
