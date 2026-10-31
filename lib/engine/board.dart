@@ -164,6 +164,10 @@ class Board {
   /// The 81-character form accepted by [Board.parse].
   String toLine() => values.map((v) => v == 0 ? '.' : '$v').join();
 
+  /// Like [toLine], but with 0 for an empty cell. This is how puzzles are
+  /// stored and saved.
+  String toDigits() => values.join();
+
   @override
   String toString() {
     final buffer = StringBuffer();

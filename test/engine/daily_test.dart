@@ -96,12 +96,12 @@ void main() {
         // If this fails after an intended change, update the expected puzzles.
         final monday = await findDailyPuzzle(DateTime(2026, 10, 12));
         expect(
-          monday!.puzzle.toLine().replaceAll('.', '0'),
+          monday!.text,
           '819647035006500987072389061950026813031094070287135600460951708098263150005478006',
         );
         final saturday = await findDailyPuzzle(DateTime(2026, 10, 10));
         expect(
-          saturday!.puzzle.toLine().replaceAll('.', '0'),
+          saturday!.text,
           '021000900709000000005080300800050020000300010070004500002039000100400050000000600',
         );
         expect(saturday.rating.required, Technique.uniqueRectangle);

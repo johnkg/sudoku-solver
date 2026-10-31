@@ -5,6 +5,7 @@ import '../progress/progress_store.dart';
 import '../settings/settings.dart';
 import 'cheat_sheet_screen.dart';
 import 'learn_tab.dart';
+import 'navigation.dart';
 import 'practice_tab.dart';
 import 'settings_screen.dart';
 import 'solver_tab.dart';
@@ -62,16 +63,11 @@ class _AppShellState extends State<AppShell> {
     final store = ProgressScope.read(context);
     switch (action) {
       case _MenuAction.cheatSheet:
-        await Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const CheatSheetScreen()),
-        );
+        await pushScreen(context, (_) => const CheatSheetScreen());
       case _MenuAction.stats:
-        await Navigator.of(context)
-            .push(MaterialPageRoute<void>(builder: (_) => const StatsScreen()));
+        await pushScreen(context, (_) => const StatsScreen());
       case _MenuAction.settings:
-        await Navigator.of(
-          context,
-        ).push(MaterialPageRoute<void>(builder: (_) => const SettingsScreen()));
+        await pushScreen(context, (_) => const SettingsScreen());
       case _MenuAction.unlockAll:
         store.unlockAllLevels();
       case _MenuAction.reset:

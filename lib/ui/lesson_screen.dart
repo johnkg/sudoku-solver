@@ -5,6 +5,7 @@ import '../lessons/lessons.dart';
 import 'board_view.dart';
 import 'layout.dart';
 import 'levels.dart';
+import 'navigation.dart';
 import 'link_legend.dart';
 import 'puzzle_library.dart';
 import 'quiz_screen.dart';
@@ -119,10 +120,9 @@ class _LessonScreenState extends State<LessonScreen> {
             title: const Text('Quiz me'),
             subtitle: Text('Spot the ${lesson.technique.label} on real boards'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (_) => QuizScreen(technique: lesson.technique),
-              ),
+            onTap: () => pushScreen(
+              context,
+              (_) => QuizScreen(technique: lesson.technique),
             ),
           ),
         ),
@@ -140,11 +140,8 @@ class _LessonScreenState extends State<LessonScreen> {
                 title: Text(puzzle.title),
                 subtitle: const Text('Solve it with the solver\'s help'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (_) => SolveScreen(puzzle: puzzle),
-                  ),
-                ),
+                onTap: () =>
+                    pushScreen(context, (_) => SolveScreen(puzzle: puzzle)),
               ),
             ),
       ],

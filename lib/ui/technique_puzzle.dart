@@ -1,15 +1,17 @@
 import 'dart:math';
 
-import 'layout.dart';
-
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
+import 'layout.dart';
+import 'navigation.dart';
+import 'practice_card.dart';
 import 'puzzle_library.dart';
 import 'search_dialog.dart';
 import 'solve_screen.dart';
 
-/// Looks for a random puzzle built around [technique], then opens it. With [replace] the current screen is swapped for the new puzzle.
+/// Looks for a random puzzle built around [technique], then opens it. With
+/// [replace] the current screen is swapped for the new puzzle.
 ///
 /// Like random puzzles, these are practice only: not saved, and they do not
 /// count towards unlocking levels.
@@ -31,21 +33,18 @@ Future<void> playTechniquePuzzle(
   final entry = PuzzleEntry(
     id: 'technique',
     title: '${technique.label} puzzle',
-    text: found.puzzle.toLine().replaceAll('.', '0'),
+    text: found.text,
     technique: found.rating.required ?? technique,
   );
-  final route = MaterialPageRoute<void>(
-    builder: (context) => SolveScreen(
+  openScreen(
+    navigator,
+    (context) => SolveScreen(
       puzzle: entry,
       recordProgress: false,
       onNewPuzzle: () => playTechniquePuzzle(context, technique, replace: true),
     ),
+    replace: replace,
   );
-  if (replace) {
-    navigator.pushReplacement(route);
-  } else {
-    navigator.push(route);
-  }
 }
 
 /// A card on the Practice tab: pick a technique, get a puzzle built around it.
@@ -64,7 +63,6 @@ class _TechniquePuzzleCardState extends State<TechniquePuzzleCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     // Full House only ever finishes a unit, so no puzzle needs it.
     final options = [
       for (final t in Technique.values)
@@ -72,43 +70,30 @@ class _TechniquePuzzleCardState extends State<TechniquePuzzleCard> {
     ];
     final selected = options.contains(chosen) ? chosen : options.first;
 
-    return Card(
-      margin: const EdgeInsets.only(top: Space.lg),
-      child: Padding(
-        padding: const EdgeInsets.all(Space.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Practise a technique', style: theme.textTheme.titleMedium),
-            const SizedBox(height: Space.xs),
-            Text(
-              'A fresh puzzle built around the technique you pick. Harder ones '
-              'can take a little while to find.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: Space.md),
-            DropdownButton<Technique>(
-              key: const Key('technique-picker'),
-              isExpanded: true,
-              value: selected,
-              items: [
-                for (final t in options)
-                  DropdownMenuItem(value: t, child: Text(t.label)),
-              ],
-              onChanged: (t) => setState(() => chosen = t),
-            ),
-            const SizedBox(height: Space.md),
-            FilledButton.icon(
-              key: const Key('technique-puzzle'),
-              onPressed: () => playTechniquePuzzle(context, selected!),
-              icon: const Icon(Icons.psychology_outlined),
-              label: const Text('Play a puzzle with it'),
-            ),
+    return PracticeCard(
+      title: 'Practise a technique',
+      description:
+          'A fresh puzzle built around the technique you pick. Harder ones '
+          'can take a little while to find.',
+      children: [
+        DropdownButton<Technique>(
+          key: const Key('technique-picker'),
+          isExpanded: true,
+          value: selected,
+          items: [
+            for (final t in options)
+              DropdownMenuItem(value: t, child: Text(t.label)),
           ],
+          onChanged: (t) => setState(() => chosen = t),
         ),
-      ),
+        const SizedBox(height: Space.md),
+        FilledButton.icon(
+          key: const Key('technique-puzzle'),
+          onPressed: () => playTechniquePuzzle(context, selected!),
+          icon: const Icon(Icons.psychology_outlined),
+          label: const Text('Play a puzzle with it'),
+        ),
+      ],
     );
   }
 }

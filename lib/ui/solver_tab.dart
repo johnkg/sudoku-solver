@@ -4,7 +4,9 @@ import 'package:flutter/services.dart';
 import '../engine/engine.dart';
 import '../scan/photo_scan.dart';
 import '../scan/scan_result.dart';
+import '../util/text.dart';
 import 'layout.dart';
+import 'navigation.dart';
 import 'puzzle_link.dart';
 import 'board_view.dart';
 import 'puzzle_library.dart';
@@ -252,9 +254,7 @@ class _SolverTabState extends State<SolverTab> {
       if (go != true || !mounted) return;
     }
     if (!mounted) return;
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => WalkthroughScreen(start: board)),
-    );
+    await pushScreen(context, (_) => WalkthroughScreen(start: board));
   }
 
   Future<void> _copyLink() async {
@@ -285,13 +285,12 @@ class _SolverTabState extends State<SolverTab> {
     final entry = PuzzleEntry(
       id: 'custom',
       title: 'My puzzle',
-      text: board.toLine().replaceAll('.', '0'),
+      text: board.toDigits(),
       technique: rating.required ?? Technique.values.last,
     );
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => SolveScreen(puzzle: entry, recordProgress: false),
-      ),
+    await pushScreen(
+      context,
+      (_) => SolveScreen(puzzle: entry, recordProgress: false),
     );
   }
 
@@ -325,7 +324,7 @@ class _SolverTabState extends State<SolverTab> {
         : note ??
               (filled == 0
                   ? 'Tap a cell, then a digit, to type in your puzzle.'
-                  : '$filled digit${filled == 1 ? '' : 's'} entered.');
+                  : '${plural(filled, 'digit')} entered.');
 
     final controls = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

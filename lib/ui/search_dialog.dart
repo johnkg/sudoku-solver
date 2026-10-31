@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import 'layout.dart';
@@ -18,30 +20,32 @@ Future<T?> runSearchWithDialog<T>(
   final messenger = ScaffoldMessenger.maybeOf(context);
 
   // Not awaited: the dialog stays up while the search runs.
-  showDialog<void>(
-    context: context,
-    barrierDismissible: false,
-    builder: (_) => AlertDialog(
-      content: Row(
-        children: [
-          const SizedBox(
-            width: spinnerSize,
-            height: spinnerSize,
-            child: CircularProgressIndicator(strokeWidth: spinnerStroke),
+  unawaited(
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => AlertDialog(
+        content: Row(
+          children: [
+            const SizedBox(
+              width: spinnerSize,
+              height: spinnerSize,
+              child: CircularProgressIndicator(strokeWidth: spinnerStroke),
+            ),
+            const SizedBox(width: Space.lg),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              cancelled = true;
+              Navigator.of(context, rootNavigator: true).pop();
+            },
+            child: const Text('Cancel'),
           ),
-          const SizedBox(width: Space.lg),
-          Expanded(child: Text(message)),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () {
-            cancelled = true;
-            Navigator.of(context, rootNavigator: true).pop();
-          },
-          child: const Text('Cancel'),
-        ),
-      ],
     ),
   );
 

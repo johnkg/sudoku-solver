@@ -8,6 +8,7 @@ import 'lesson_screen.dart';
 import 'learn_progress.dart';
 import 'level_header.dart';
 import 'levels.dart';
+import 'navigation.dart';
 import 'unlocking.dart';
 import 'weak_spots.dart';
 
@@ -237,7 +238,5 @@ class _LessonTile extends StatelessWidget {
 }
 
 void openLesson(BuildContext context, Lesson lesson) {
-  Navigator.of(
-    context,
-  ).push(MaterialPageRoute<void>(builder: (_) => LessonScreen(lesson: lesson)));
+  pushScreen(context, (_) => LessonScreen(lesson: lesson));
 }

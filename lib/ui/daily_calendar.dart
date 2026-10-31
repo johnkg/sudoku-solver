@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../util/text.dart' show formatDayKey;
 import 'layout.dart';
 
 const _monthNames = [
@@ -24,11 +25,6 @@ class _DailyCalendarState extends State<DailyCalendar> {
   static const _maxWidth = 360.0;
 
   late DateTime month = DateTime(widget.today.year, widget.today.month);
-
-  static String _key(DateTime d) =>
-      '${d.year.toString().padLeft(4, '0')}-'
-      '${d.month.toString().padLeft(2, '0')}-'
-      '${d.day.toString().padLeft(2, '0')}';
 
   /// The oldest month worth showing: the first one with a solve, else now.
   DateTime get _earliest {
@@ -116,7 +112,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
                   Builder(
                     builder: (context) {
                       final date = DateTime(month.year, month.month, day);
-                      final solved = widget.solved.contains(_key(date));
+                      final solved = widget.solved.contains(formatDayKey(date));
                       final isToday = date == today;
                       final future = date.isAfter(today);
                       return Semantics(
@@ -124,7 +120,7 @@ class _DailyCalendarState extends State<DailyCalendar> {
                             '${_monthNames[month.month - 1]} $day'
                             '${solved ? ', solved' : ''}',
                         child: Container(
-                          key: Key('cal-day-${_key(date)}'),
+                          key: Key('cal-day-${formatDayKey(date)}'),
                           margin: const EdgeInsets.all(3),
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,

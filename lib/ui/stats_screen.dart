@@ -3,13 +3,13 @@ import 'package:flutter/material.dart';
 import '../engine/engine.dart' show Technique;
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart' show ProgressStore, PuzzleRecord;
+import '../util/text.dart' show formatClock;
 import 'achievements.dart';
 import 'daily_calendar.dart';
 import 'layout.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
 import 'section.dart';
-import 'solve_screen.dart' show formatClock;
 import 'weak_spots.dart';
 
 /// What the player has achieved: puzzles solved, stars, streak, and the

@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../util/text.dart';
+
 /// How well the player solved a puzzle.
 class PuzzleRecord {
   const PuzzleRecord({
@@ -261,10 +263,7 @@ class ProgressStore extends ChangeNotifier {
   String get todayKey => dayKey(_now());
 
   /// The calendar day of [date] as `yyyy-MM-dd`.
-  static String dayKey(DateTime date) =>
-      '${date.year.toString().padLeft(4, '0')}-'
-      '${date.month.toString().padLeft(2, '0')}-'
-      '${date.day.toString().padLeft(2, '0')}';
+  static String dayKey(DateTime date) => formatDayKey(date);
 
   /// How the player did on the daily puzzle for [dayKey], or null.
   PuzzleRecord? dailyRecord(String dayKey) => _daily[dayKey];

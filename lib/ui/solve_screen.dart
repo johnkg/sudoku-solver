@@ -9,12 +9,14 @@ import '../lessons/lessons.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
 import '../settings/settings.dart';
+import '../util/text.dart';
 import 'achievements.dart';
 import 'board_view.dart';
 import 'hint_ladder.dart';
 import 'layout.dart';
 import 'learn_tab.dart';
 import 'levels.dart';
+import 'navigation.dart';
 import 'puzzle_library.dart';
 import 'share_result.dart';
 import 'solve_controller.dart';
@@ -320,16 +322,15 @@ class _SolveScreenState extends State<SolveScreen>
     controller.useGuide();
     final wasPaused = controller.paused;
     if (!wasPaused) controller.togglePause();
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (_) => WalkthroughScreen(
-          start: controller.board.copy(),
-          givens: {
-            for (var c = 0; c < Board.cellCount; c++)
-              if (controller.board.values[c] != 0) c,
-          },
-          title: 'Guide: ${widget.puzzle.title}',
-        ),
+    await pushScreen(
+      context,
+      (_) => WalkthroughScreen(
+        start: controller.board.copy(),
+        givens: {
+          for (var c = 0; c < Board.cellCount; c++)
+            if (controller.board.values[c] != 0) c,
+        },
+        title: 'Guide: ${widget.puzzle.title}',
       ),
     );
     if (mounted && !wasPaused && controller.paused) controller.togglePause();
@@ -515,16 +516,6 @@ class _SolveScreenState extends State<SolveScreen>
       ),
     );
   }
-}
-
-/// Seconds as `m:ss`, or `h:mm:ss` past an hour.
-String formatClock(int seconds) {
-  final time = Duration(seconds: seconds);
-  String twoDigits(int n) => n.toString().padLeft(2, '0');
-  final h = time.inHours;
-  final m = time.inMinutes.remainder(Duration.minutesPerHour);
-  final s = twoDigits(time.inSeconds.remainder(Duration.secondsPerMinute));
-  return h > 0 ? '$h:${twoDigits(m)}:$s' : '$m:$s';
 }
 
 /// Stands in for the board while paused, so the puzzle cannot be studied with
@@ -1032,7 +1023,7 @@ class _StepPanel extends StatelessWidget {
           Text(
             count == 0
                 ? 'Ready when you are'
-                : '$count ${count == 1 ? 'move' : 'moves'} so far',
+                : '${plural(count, 'move')} so far',
             style: theme.textTheme.titleMedium,
           ),
           const SizedBox(height: Space.xs),
@@ -1116,7 +1107,7 @@ class _Summary extends StatelessWidget {
               ),
               const SizedBox(width: Space.xs),
               Text(
-                '$dailyStreak ${dailyStreak == 1 ? 'day' : 'days'} in a row',
+                '${plural(dailyStreak!, 'day')} in a row',
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: theme.colorScheme.primary,
                 ),
