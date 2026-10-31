@@ -62,7 +62,7 @@ void main(List<String> args) {
     if (list.length < keep) {
       final clues = puzzle.values.where((v) => v != 0).length;
       final line =
-          '${technique.name} ${puzzle.toLine().replaceAll('.', '0')} '
+          '${technique.name} ${puzzle.toDigits()} '
           '$clues ${rating.stepCount}';
       list.add(line);
       // Print as soon as found, so a long run can be read before it ends.

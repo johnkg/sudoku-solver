@@ -1,0 +1,16 @@
+name: Set up Flutter
+description: Installs the Flutter version this project is built and tested with.
+
+# The one place that names the Flutter version. Bump it on purpose, after
+# running the tests on the new version, so a new stable release cannot break
+# CI by itself.
+runs:
+  using: composite
+  steps:
+    - uses: subosito/flutter-action@v2
+      with:
+        channel: stable
+        flutter-version: 3.47.9
+        cache: true
+    - run: flutter pub get
+      shell: bash

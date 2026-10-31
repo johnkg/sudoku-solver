@@ -15,6 +15,9 @@ class FoundPuzzle {
 
   final Board puzzle;
   final PuzzleRating rating;
+
+  /// The puzzle as 81 digits, with 0 for an empty cell.
+  String get text => puzzle.toDigits();
 }
 
 /// How many puzzles a search tries before giving up.

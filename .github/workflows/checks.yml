@@ -1,0 +1,23 @@
+name: Checks (reusable)
+
+# Format, analyze and test. Called by the pull request and deploy workflows so
+# both run exactly the same checks.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-flutter
+      - name: Check vendored scan files
+        run: cd web/scan && sha256sum -c SHA256SUMS
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: flutter analyze
+      - run: flutter test --coverage
+      - name: Check coverage
+        run: dart run tool/check_coverage.dart coverage/lcov.info 90

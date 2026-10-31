@@ -68,9 +68,9 @@ class SettingsScreen extends StatelessWidget {
               const SectionTitle('Game'),
               _Group(
                 children: [
-                  ListTile(
-                    title: const Text('Mistake limit'),
-                    subtitle: const Padding(
+                  const ListTile(
+                    title: Text('Mistake limit'),
+                    subtitle: Padding(
                       padding: EdgeInsets.only(top: Space.xs),
                       child: Text(
                         'After this many mistakes the game offers to start the '

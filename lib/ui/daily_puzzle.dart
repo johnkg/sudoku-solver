@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 
-import 'layout.dart';
-
 import '../engine/engine.dart';
 import '../progress/progress_scope.dart';
 import '../progress/progress_store.dart';
+import '../util/text.dart';
+import 'layout.dart';
 import 'levels.dart';
+import 'navigation.dart';
 import 'puzzle_library.dart';
 import 'search_dialog.dart';
 import 'solve_screen.dart';
@@ -38,7 +39,7 @@ Future<void> playDailyPuzzle(BuildContext context) async {
       search: (isCancelled) => findDailyPuzzle(today, isCancelled: isCancelled),
     );
     if (found == null) return;
-    text = found.puzzle.toLine().replaceAll('.', '0');
+    text = found.text;
     technique = found.rating.required;
     store.saveDailyPuzzle(key, text);
   }
@@ -50,11 +51,7 @@ Future<void> playDailyPuzzle(BuildContext context) async {
     text: text,
     technique: technique!,
   );
-  navigator.push(
-    MaterialPageRoute<void>(
-      builder: (_) => SolveScreen(puzzle: entry, dailyKey: key),
-    ),
-  );
+  openScreen(navigator, (_) => SolveScreen(puzzle: entry, dailyKey: key));
 }
 
 /// A card on the Practice tab: today's puzzle, its level, and the streak.
@@ -102,7 +99,7 @@ class DailyPuzzleCard extends StatelessWidget {
                         ),
                         const SizedBox(width: Space.xs),
                         Text(
-                          '$streak ${streak == 1 ? 'day' : 'days'}',
+                          plural(streak, 'day'),
                           style: theme.textTheme.labelLarge?.copyWith(
                             color: theme.colorScheme.onPrimaryContainer,
                           ),

@@ -6,6 +6,7 @@ import 'daily_puzzle.dart';
 import 'layout.dart';
 import 'level_header.dart';
 import 'levels.dart';
+import 'navigation.dart';
 import 'puzzle_library.dart';
 import 'random_puzzle.dart';
 import 'solve_screen.dart';
@@ -126,9 +127,7 @@ class _PuzzleTile extends StatelessWidget {
         title: Text(puzzle.title),
         subtitle: Text(subtitle),
         trailing: trailing,
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => SolveScreen(puzzle: puzzle)),
-        ),
+        onTap: () => pushScreen(context, (_) => SolveScreen(puzzle: puzzle)),
       ),
     );
   }

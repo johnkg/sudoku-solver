@@ -1,11 +1,12 @@
 import 'dart:math';
 
-import 'layout.dart';
-
 import 'package:flutter/material.dart';
 
 import '../engine/engine.dart';
+import 'layout.dart';
 import 'levels.dart';
+import 'navigation.dart';
+import 'practice_card.dart';
 import 'puzzle_library.dart';
 import 'search_dialog.dart';
 import 'solve_screen.dart';
@@ -44,21 +45,18 @@ Future<void> playRandomPuzzle(
   final entry = PuzzleEntry(
     id: 'random',
     title: 'Random · Level $level',
-    text: found.puzzle.toLine().replaceAll('.', '0'),
+    text: found.text,
     technique: found.rating.required!,
   );
-  final route = MaterialPageRoute<void>(
-    builder: (context) => SolveScreen(
+  openScreen(
+    navigator,
+    (context) => SolveScreen(
       puzzle: entry,
       recordProgress: false,
       onNewPuzzle: () => playRandomPuzzle(context, level, replace: true),
     ),
+    replace: replace,
   );
-  if (replace) {
-    navigator.pushReplacement(route);
-  } else {
-    navigator.push(route);
-  }
 }
 
 /// A card on the Practice tab: pick a level, get a fresh puzzle.
@@ -77,49 +75,34 @@ class _RandomPuzzleCardState extends State<RandomPuzzleCard> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      margin: const EdgeInsets.only(top: Space.lg),
-      child: Padding(
-        padding: const EdgeInsets.all(Space.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+    return PracticeCard(
+      title: 'Random puzzle',
+      description:
+          'A fresh puzzle at the level you choose. Practice only: it does '
+          'not count towards unlocking.',
+      children: [
+        Wrap(
+          spacing: Space.sm,
+          runSpacing: Space.sm,
           children: [
-            Text('Random puzzle', style: theme.textTheme.titleMedium),
-            const SizedBox(height: Space.xs),
-            Text(
-              'A fresh puzzle at the level you choose. Practice only: it does '
-              'not count towards unlocking.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            for (final l in levelNames.keys)
+              ChoiceChip(
+                label: Text('Level $l'),
+                tooltip: levelNames[l],
+                selected: level == l,
+                onSelected: widget.isUnlocked(l)
+                    ? (_) => setState(() => level = l)
+                    : null,
               ),
-            ),
-            const SizedBox(height: Space.md),
-            Wrap(
-              spacing: Space.sm,
-              runSpacing: Space.sm,
-              children: [
-                for (final l in levelNames.keys)
-                  ChoiceChip(
-                    label: Text('Level $l'),
-                    tooltip: levelNames[l],
-                    selected: level == l,
-                    onSelected: widget.isUnlocked(l)
-                        ? (_) => setState(() => level = l)
-                        : null,
-                  ),
-              ],
-            ),
-            const SizedBox(height: Space.md),
-            FilledButton.icon(
-              onPressed: () => playRandomPuzzle(context, level),
-              icon: const Icon(Icons.shuffle),
-              label: const Text('Play random puzzle'),
-            ),
           ],
         ),
-      ),
+        const SizedBox(height: Space.md),
+        FilledButton.icon(
+          onPressed: () => playRandomPuzzle(context, level),
+          icon: const Icon(Icons.shuffle),
+          label: const Text('Play random puzzle'),
+        ),
+      ],
     );
   }
 }

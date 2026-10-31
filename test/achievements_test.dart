@@ -87,7 +87,7 @@ void main() {
       for (final p in level1.skip(1)) {
         store.recordSolve(p.id, mistakes: 0, hints: 0);
       }
-      var a = achievement(store, 'level-1');
+      final a = achievement(store, 'level-1');
       expect(a.unlocked, isFalse);
       expect(a.progress, level1.length - 1);
       expect(a.goal, level1.length);
