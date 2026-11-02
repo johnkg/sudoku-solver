@@ -22,7 +22,8 @@ It runs on-device and offline. The engine is pure Dart with no server.
 - **Progress**: stars, unlocking by level, achievements, stats and weak spots,
   saved on the device.
 
-The technique ladder is in [PLAN.md](PLAN.md).
+The technique ladder is in [PLAN.md](PLAN.md). For a tour of every file and how
+to maintain the code, read [docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md).
 
 ## Run it
 
@@ -61,7 +62,10 @@ lib/
   settings/   player settings
   scan/       photo scan bridge (web only; a stub elsewhere)
   ui/         screens and widgets
-    solve/        the parts of the Solve screen (board tools, pad, stats, summary)
+    board/        painting the board: painter, step markup, drawing helpers
+    solve/        the parts of the Solve screen (recorder, tools, pad, stats…)
+    solver/       the parts of the Solver tab (controls, import, photo scan)
+    walkthrough/  the parts of the step-by-step walkthrough
   util/       small shared helpers: text, clock and day-key formatting
 tool/         command-line scripts (solve, curate puzzles, coverage check)
 test/         engine, progress and UI tests
@@ -73,6 +77,9 @@ Shared UI helpers worth reusing instead of copying:
 | Need | Use |
 | --- | --- |
 | Open a screen | `pushScreen` / `openScreen` in `ui/navigation.dart` |
+| A two-button question | `confirm` in `ui/confirm_dialog.dart` |
+| Board beside a panel | `BoardWithPanel` in `ui/board_with_panel.dart` |
+| Digit keys 1-9 | `DigitKeyRow` / `digitOfKey` in `ui/digit_keys.dart` |
 | A card on the Practice tab | `PracticeCard` in `ui/practice_card.dart` |
 | "1 hint", "3 hints" | `plural` in `util/text.dart` |
 | `m:ss` timer text | `formatClock` in `util/text.dart` |
@@ -86,6 +93,8 @@ GitHub Pages (`.github/workflows/pages.yml`).
 
 ## More
 
+- [docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md): every file, the app flow in
+  plain words, and how to maintain it.
 - [PLAN.md](PLAN.md): design, technique ladder and project history.
 - [tool/scan/README.md](tool/scan/README.md): measuring photo-scan accuracy.
 - [web/scan/README.md](web/scan/README.md): the vendored OCR files.
