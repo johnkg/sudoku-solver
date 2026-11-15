@@ -19,14 +19,14 @@ class PuzzleRating {
 
   /// The hardest technique the puzzle cannot be solved without, in the
   /// solver's easiest-first order. Null if the puzzle is not unique or needs
-  /// something the engine does not know (for example chains).
+  /// something the engine does not know.
   final Technique? required;
 
   /// How many times each technique was used in a full solve, in the order
   /// techniques appear in [Technique].
   final Map<Technique, int> uses;
 
-  /// 1 (beginner) to 5 (expert), or 0 when the engine cannot solve it.
+  /// 1 (beginner) to 6 (master), or 0 when the engine cannot solve it.
   int get level => required?.level ?? 0;
 
   int get stepCount => uses.values.fold(0, (a, b) => a + b);
@@ -43,16 +43,26 @@ PuzzleRating ratePuzzle(
     return const PuzzleRating(unique: false, required: null, uses: {});
   }
 
+  final full = Solver(techniques: techniques).solve(puzzle);
+  if (!full.solved) {
+    return const PuzzleRating(unique: true, required: null, uses: {});
+  }
+  final uses = <Technique, int>{};
+  for (final step in full.steps) {
+    uses[step.technique] = (uses[step.technique] ?? 0) + 1;
+  }
+
   bool solvesWith(int count) =>
       Solver(techniques: techniques.sublist(0, count)).solve(puzzle).solved;
 
-  if (!solvesWith(techniques.length)) {
-    return const PuzzleRating(unique: true, required: null, uses: {});
-  }
-
-  // Solving power only grows with a longer prefix, so binary search.
+  // Solving power only grows with a longer prefix, so binary search. The
+  // full solve never reached past the hardest technique it used, so the
+  // answer is no later than that one.
   var low = 1;
-  var high = techniques.length;
+  var high = 1;
+  for (var i = 0; i < techniques.length; i++) {
+    if (uses.containsKey(techniques[i].technique)) high = i + 1;
+  }
   while (low < high) {
     final mid = (low + high) ~/ 2;
     if (solvesWith(mid)) {
@@ -62,10 +72,6 @@ PuzzleRating ratePuzzle(
     }
   }
 
-  final uses = <Technique, int>{};
-  for (final step in Solver(techniques: techniques).solve(puzzle).steps) {
-    uses[step.technique] = (uses[step.technique] ?? 0) + 1;
-  }
   final ordered = {
     for (final t in Technique.values)
       if (uses.containsKey(t)) t: uses[t]!,

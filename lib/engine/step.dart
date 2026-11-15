@@ -21,11 +21,13 @@ enum Technique {
   simpleColoring(5, 'Simple Coloring'),
   jellyfish(5, 'Jellyfish'),
   xChain(5, 'X-Chain'),
-  xyChain(5, 'XY-Chain');
+  xyChain(5, 'XY-Chain'),
+  aic(6, 'AIC'),
+  forcingChain(6, 'Forcing Chain');
 
   const Technique(this.level, this.label);
 
-  /// Difficulty level, 1 (beginner) to 5 (expert).
+  /// Difficulty level, 1 (beginner) to 6 (master).
   final int level;
   final String label;
 }
@@ -44,15 +46,25 @@ class Elimination {
   final List<int> digits;
 }
 
-/// A line the UI draws between two cells of a pattern, for [digit]. A strong
-/// link means exactly one of the two cells holds the digit; a weak link only
-/// means they cannot both hold it.
+/// A line the UI draws between two candidates of a pattern: [digit] in cell
+/// [from] and [toDigit] in cell [to]. A strong link means exactly one of the
+/// two is true; a weak link only means they cannot both be.
 class ChainLink {
-  const ChainLink(this.from, this.to, this.digit, {this.strong = false});
+  const ChainLink(
+    this.from,
+    this.to,
+    this.digit, {
+    this.strong = false,
+    int? toDigit,
+  }) : toDigit = toDigit ?? digit;
 
   final int from;
   final int to;
   final int digit;
+
+  /// The digit at the [to] end. The same as [digit] unless the link joins two
+  /// different digits, as the links of an AIC can.
+  final int toDigit;
   final bool strong;
 }
 

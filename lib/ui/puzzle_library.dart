@@ -38,6 +38,12 @@ const puzzleLibrary = [
     technique: Technique.fullHouse,
   ),
   PuzzleEntry(
+    id: 'fullHouse-3',
+    title: 'Full House practice 3',
+    text: '500128934083649751940537028152073846634810070798062315315286497829704163476091502',
+    technique: Technique.fullHouse,
+  ),
+  PuzzleEntry(
     id: 'nakedSingle',
     title: 'Warm-up',
     text: '530070000600195000098000060800060003400803001700020006060000280000419005000080079',
@@ -47,6 +53,12 @@ const puzzleLibrary = [
     id: 'nakedSingle-2',
     title: 'Naked Single practice 2',
     text: '748052139106074050253891674002930086805046390630718542924560013501403967367109025',
+    technique: Technique.nakedSingle,
+  ),
+  PuzzleEntry(
+    id: 'nakedSingle-3',
+    title: 'Naked Single practice 3',
+    text: '091050000704093581000014300100000000570608030900070028000000000403100805059400003',
     technique: Technique.nakedSingle,
   ),
   PuzzleEntry(
@@ -62,6 +74,12 @@ const puzzleLibrary = [
     technique: Technique.hiddenSingle,
   ),
   PuzzleEntry(
+    id: 'hiddenSingle-3',
+    title: 'Hidden Single practice 3',
+    text: '000008000360000500418309600094000000003100700050000406000001900706200800920504000',
+    technique: Technique.hiddenSingle,
+  ),
+  PuzzleEntry(
     id: 'pointingPair',
     title: 'Locked in a line',
     text: '4.....8.5.3..........7......2.....6.....8.4......1.......6.3.7.5..2.....1.4......',
@@ -71,6 +89,12 @@ const puzzleLibrary = [
     id: 'pointingPair-2',
     title: 'Pointing Pair/Triple practice 2',
     text: '091000438400018009007034125300095071004000800006783000040856010600000000700040380',
+    technique: Technique.pointingPair,
+  ),
+  PuzzleEntry(
+    id: 'pointingPair-3',
+    title: 'Pointing Pair/Triple practice 3',
+    text: '670025001050090070002000860000070200000000000020013604308000020006001000000050000',
     technique: Technique.pointingPair,
   ),
   PuzzleEntry(
@@ -86,6 +110,12 @@ const puzzleLibrary = [
     technique: Technique.boxLineReduction,
   ),
   PuzzleEntry(
+    id: 'boxLineReduction-3',
+    title: 'Box/Line Reduction practice 3',
+    text: '002084309000070000010009605000050003080000900100800000503090206600003000900000000',
+    technique: Technique.boxLineReduction,
+  ),
+  PuzzleEntry(
     id: 'nakedPair',
     title: 'Twin cells',
     text: '050003100000700004000900008807000200030000060502000010120000070000060001079300600',
@@ -95,6 +125,12 @@ const puzzleLibrary = [
     id: 'nakedPair-2',
     title: 'Naked Pair practice 2',
     text: '027000960835091720600200001060070209098400610002906050050009008000084000900500170',
+    technique: Technique.nakedPair,
+  ),
+  PuzzleEntry(
+    id: 'nakedPair-3',
+    title: 'Naked Pair practice 3',
+    text: '900006402600080000000000009300640000000703601100000000000004580250000000006590300',
     technique: Technique.nakedPair,
   ),
   PuzzleEntry(
@@ -110,6 +146,12 @@ const puzzleLibrary = [
     technique: Technique.hiddenPair,
   ),
   PuzzleEntry(
+    id: 'hiddenPair-3',
+    title: 'Hidden Pair practice 3',
+    text: '000000070120006030500021000700000080040010000000004009003700000900500002004002060',
+    technique: Technique.hiddenPair,
+  ),
+  PuzzleEntry(
     id: 'nakedTriple',
     title: 'Naked Triple practice',
     text: '080090047500000080407138060750004006000309000300000000020900008000081000100570090',
@@ -119,6 +161,12 @@ const puzzleLibrary = [
     id: 'nakedTriple-2',
     title: 'Naked Triple practice 2',
     text: '800023090345600012200000860000000040006800000100900006400700009902008030000000407',
+    technique: Technique.nakedTriple,
+  ),
+  PuzzleEntry(
+    id: 'nakedTriple-3',
+    title: 'Naked Triple practice 3',
+    text: '050000000020901805104060002000009000215700000078020000000080170040000003000006054',
     technique: Technique.nakedTriple,
   ),
   PuzzleEntry(
@@ -134,6 +182,12 @@ const puzzleLibrary = [
     technique: Technique.hiddenTriple,
   ),
   PuzzleEntry(
+    id: 'hiddenTriple-3',
+    title: 'Hidden Triple practice 3',
+    text: '000058203009000010000030400007010000200090600900002050000080040600004035000600120',
+    technique: Technique.hiddenTriple,
+  ),
+  PuzzleEntry(
     id: 'xWing',
     title: 'X-Wing practice',
     text: '107000000093084060000000900401007093009005700738400100000038000000000007000279040',
@@ -143,6 +197,12 @@ const puzzleLibrary = [
     id: 'xWing-2',
     title: 'X-Wing practice 2',
     text: '000900600905000080062050971000000038504100000000060210703608000400000020206500000',
+    technique: Technique.xWing,
+  ),
+  PuzzleEntry(
+    id: 'xWing-3',
+    title: 'X-Wing practice 3',
+    text: '040003000560000900097000460600082004400000052000000000052400006804506300000029040',
     technique: Technique.xWing,
   ),
   PuzzleEntry(
@@ -158,6 +218,12 @@ const puzzleLibrary = [
     technique: Technique.skyscraper,
   ),
   PuzzleEntry(
+    id: 'skyscraper-3',
+    title: 'Skyscraper practice 3',
+    text: '000053708050000000001070000046001002005400000000000053094000060002006801000300009',
+    technique: Technique.skyscraper,
+  ),
+  PuzzleEntry(
     id: 'yWing',
     title: 'Three-cell wing',
     text: '050000006200000004000006050080000000310054000600020090007000013830700900005230080',
@@ -167,6 +233,12 @@ const puzzleLibrary = [
     id: 'yWing-2',
     title: 'Y-Wing practice 2',
     text: '900580000804020750025000490080070900407006000500341000200038170040900036000000040',
+    technique: Technique.yWing,
+  ),
+  PuzzleEntry(
+    id: 'yWing-3',
+    title: 'Y-Wing practice 3',
+    text: '005000009007030800000100000070000000030615200104000030000000780082703600000090004',
     technique: Technique.yWing,
   ),
   PuzzleEntry(
@@ -182,6 +254,12 @@ const puzzleLibrary = [
     technique: Technique.swordfish,
   ),
   PuzzleEntry(
+    id: 'swordfish-3',
+    title: 'Swordfish practice 3',
+    text: '900350004010800703300009060640007350700634010009000607000562000000048900004000500',
+    technique: Technique.swordfish,
+  ),
+  PuzzleEntry(
     id: 'nakedQuad',
     title: 'Naked Quad practice',
     text: '200060004604000000000004053000710090100020000702800006071680320300000800008300100',
@@ -194,9 +272,21 @@ const puzzleLibrary = [
     technique: Technique.nakedQuad,
   ),
   PuzzleEntry(
+    id: 'nakedQuad-3',
+    title: 'Naked Quad practice 3',
+    text: '040000102007009000610000007800130200050070000004800600403000001000000098005490000',
+    technique: Technique.nakedQuad,
+  ),
+  PuzzleEntry(
     id: 'hiddenQuad',
     title: 'Hidden Quad practice',
     text: '030000902004009000000500080600104000205800034070002050000010047000007600000300000',
+    technique: Technique.hiddenQuad,
+  ),
+  PuzzleEntry(
+    id: 'hiddenQuad-2',
+    title: 'Hidden Quad practice 2',
+    text: '000208000013007000000000000300400050760500000050086900080000090400091300005000064',
     technique: Technique.hiddenQuad,
   ),
   PuzzleEntry(
@@ -212,6 +302,12 @@ const puzzleLibrary = [
     technique: Technique.xyzWing,
   ),
   PuzzleEntry(
+    id: 'xyzWing-3',
+    title: 'XYZ-Wing practice 3',
+    text: '020060900000300200100200080010000890000010400805400602400870000002045300030000000',
+    technique: Technique.xyzWing,
+  ),
+  PuzzleEntry(
     id: 'uniqueRectangle',
     title: 'Deadly pattern',
     text: '024001000000040000900070008100300900600009504000000200007000030800000050090150760',
@@ -221,6 +317,12 @@ const puzzleLibrary = [
     id: 'uniqueRectangle-2',
     title: 'Unique Rectangle practice 2',
     text: '000090310000083900400000087046020000010609270200000000800100000001000640005460100',
+    technique: Technique.uniqueRectangle,
+  ),
+  PuzzleEntry(
+    id: 'uniqueRectangle-3',
+    title: 'Unique Rectangle practice 3',
+    text: '000720000020500060008016500007600350000040000050000642063000000000000008100800700',
     technique: Technique.uniqueRectangle,
   ),
   PuzzleEntry(
@@ -236,6 +338,12 @@ const puzzleLibrary = [
     technique: Technique.wWing,
   ),
   PuzzleEntry(
+    id: 'wWing-3',
+    title: 'W-Wing practice 3',
+    text: '000000001800925000300000507000800070001034008000100209050260000070003012030000000',
+    technique: Technique.wWing,
+  ),
+  PuzzleEntry(
     id: 'simpleColoring',
     title: 'Two colours',
     text: '904003006000000500000008300028075009070000001500090000006082000200000670090030002',
@@ -248,9 +356,27 @@ const puzzleLibrary = [
     technique: Technique.simpleColoring,
   ),
   PuzzleEntry(
+    id: 'simpleColoring-3',
+    title: 'Simple Coloring practice 3',
+    text: '020030005008060100000902006061040803840200500005000000000180030000400000100009240',
+    technique: Technique.simpleColoring,
+  ),
+  PuzzleEntry(
     id: 'jellyfish',
     title: 'Jellyfish practice',
     text: '700503190000007025200000000030000900024700000000900053605801000000060080007000000',
+    technique: Technique.jellyfish,
+  ),
+  PuzzleEntry(
+    id: 'jellyfish-2',
+    title: 'Jellyfish practice 2',
+    text: '714500000200000000006800001403000906000026000000000008002030400600000000900060230',
+    technique: Technique.jellyfish,
+  ),
+  PuzzleEntry(
+    id: 'jellyfish-3',
+    title: 'Jellyfish practice 3',
+    text: '090750100470006030600090000800000307006000000007001950000000004004607000000300800',
     technique: Technique.jellyfish,
   ),
   PuzzleEntry(
@@ -266,6 +392,12 @@ const puzzleLibrary = [
     technique: Technique.xChain,
   ),
   PuzzleEntry(
+    id: 'xChain-3',
+    title: 'X-Chain practice 3',
+    text: '408200003002000000053670000500000019020400000000029600000000905030048060070060000',
+    technique: Technique.xChain,
+  ),
+  PuzzleEntry(
     id: 'xyChain',
     title: 'Two at a time',
     text: '300000400010400600040200970194000720050000090008000000000630280000070064900080000',
@@ -276,5 +408,47 @@ const puzzleLibrary = [
     title: 'XY-Chain practice 2',
     text: '059010000800027060600500000070608400000300000200090080540000009080000076006200000',
     technique: Technique.xyChain,
+  ),
+  PuzzleEntry(
+    id: 'xyChain-3',
+    title: 'XY-Chain practice 3',
+    text: '900002504080600000004000090005001020000000003870306000000003005020005007000840001',
+    technique: Technique.xyChain,
+  ),
+  PuzzleEntry(
+    id: 'aic',
+    title: 'AIC practice',
+    text: '000006038007100000020000000050702900079000600001090580000030054040070009006005000',
+    technique: Technique.aic,
+  ),
+  PuzzleEntry(
+    id: 'aic-2',
+    title: 'AIC practice 2',
+    text: '000000006004000503026105748000800030005400002810090400007064000000700000580000000',
+    technique: Technique.aic,
+  ),
+  PuzzleEntry(
+    id: 'aic-3',
+    title: 'AIC practice 3',
+    text: '002500070000010030000002069000003000005690000000058900004006023700000100100080007',
+    technique: Technique.aic,
+  ),
+  PuzzleEntry(
+    id: 'forcingChain',
+    title: 'Forcing Chain practice',
+    text: '300006800001000070000008900000070005020400000005009006000930000050200600400000310',
+    technique: Technique.forcingChain,
+  ),
+  PuzzleEntry(
+    id: 'forcingChain-2',
+    title: 'Forcing Chain practice 2',
+    text: '000000000050700060609200100000080930000000000003006207040050000500003040800100026',
+    technique: Technique.forcingChain,
+  ),
+  PuzzleEntry(
+    id: 'forcingChain-3',
+    title: 'Forcing Chain practice 3',
+    text: '020091000700000009004035000000810000000020530040000260002070000400008090003100007',
+    technique: Technique.forcingChain,
   ),
 ];

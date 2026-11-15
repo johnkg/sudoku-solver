@@ -35,9 +35,9 @@ const wWingPuzzle =
 const simpleColoringPuzzle =
     '904003006000000500000008300028075009070000001500090000006082000200000670090030002';
 
-// Needs techniques beyond level 5 (chains): the solver stalls partway.
+// Needs techniques beyond level 6: the solver stalls partway.
 const hard =
-    '070004001000300090941060050006008000800210000030400000700100000200000800003900200';
+    '200500800080900701000007300904000000000701009020000050090060000006400200500300000';
 
 void main() {
   group('Board', () {
@@ -92,7 +92,7 @@ void main() {
     test('gets stuck on a hard puzzle instead of guessing', () {
       final result = const Solver().solve(Board.parse(hard));
       expect(result.solved, isFalse);
-      expect(result.hardest!.level, 5);
+      expect(result.hardest!.level, 6);
     });
 
     test('uses a naked pair when locked candidates run out', () {

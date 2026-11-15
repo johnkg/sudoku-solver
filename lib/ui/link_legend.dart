@@ -23,10 +23,9 @@ class LinkLegend extends StatelessWidget {
       child: Text(
         [
           if (strong)
-            'Solid line: a strong link, exactly one of the two cells holds '
-                'the digit.',
+            'Solid line: a strong link, exactly one of its two ends is true.',
           if (weak)
-            'Dashed line: a weak link, the cells cannot both hold the digit.',
+            'Dashed line: a weak link, its two ends cannot both be true.',
         ].join(' '),
         key: const Key('link-legend'),
         style: theme.textTheme.bodySmall?.copyWith(

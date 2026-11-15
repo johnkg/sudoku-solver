@@ -41,10 +41,10 @@ void main() {
       );
     });
 
-    test('a puzzle needing chains has no required technique', () {
+    test('a puzzle beyond the engine has no required technique', () {
       final rating = ratePuzzle(
         Board.parse(
-          '070004001000300090941060050006008000800210000030400000700100000200000800003900200',
+          '200500800080900701000007300904000000000701009020000050090060000006400200500300000',
         ),
       );
       expect(rating.unique, isTrue);

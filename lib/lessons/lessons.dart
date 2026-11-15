@@ -60,6 +60,9 @@ Board _givens(Map<int, int> cells) {
 /// Every digit but 1.
 const _noOne = [2, 3, 4, 5, 6, 7, 8, 9];
 
+/// Every digit but 2.
+const _noTwo = [1, 3, 4, 5, 6, 7, 8, 9];
+
 /// The cell at [row] and [column], counted from 1 as in `r2c6`.
 int _rc(int row, int column) => Board.cellAt(row - 1, column - 1);
 
@@ -447,6 +450,63 @@ final List<Lesson> lessons = [
       _rc(1, 5): [2, 3],
       _rc(5, 5): [3, 4],
       _rc(5, 1): [4, 1],
+    }),
+  ),
+  Lesson(
+    technique: Technique.aic,
+    tagline: 'A chain that changes digit along the way',
+    idea:
+        'An AIC (Alternating Inference Chain) joins candidates, not just '
+        'cells. A strong link joins two candidates of which exactly one is '
+        'true: the only two places for a digit in a unit, or the only two '
+        'candidates of a cell. A weak link joins two that cannot both be '
+        'true: the same digit in cells that see each other, or two digits in '
+        'one cell. Start and end on a strong link and alternate. If the '
+        'first candidate is false, the chain forces the last one to be '
+        'true, so at least one of the two ends is true. Anything both ends '
+        'rule out can be removed. X-Chains and XY-Chains are the special '
+        'cases that stick to one kind of link.',
+    spot:
+        'Mark cells with two candidates and digits with two places in a '
+        'unit: those are your strong links. Start at one, step to something '
+        'it rules out, and look for a strong link leading on from there. '
+        'Stop when the end is the same digit as the start, or sits in a cell '
+        'that sees the start.',
+    buildExample: () => _candidates({
+      // 1 fits only r1c1 and r1c5 in row 1; r1c5 is 1 or 2.
+      ..._noOneInRowExcept(1, {1, 5}),
+      _rc(1, 5): [1, 2],
+      // 2 fits only r1c5 and r6c5 in column 5.
+      for (var row = 2; row <= Board.size; row++)
+        if (row != 6) _rc(row, 5): _noTwo,
+      // r6c1 sees r6c5 and is 1 or 2.
+      _rc(6, 1): [1, 2],
+    }),
+  ),
+  Lesson(
+    technique: Technique.forcingChain,
+    tagline: 'Suppose a digit, and watch it break the board',
+    idea:
+        'When nothing else works, test a candidate. Suppose it is true and '
+        'follow only what that forces: cells left with one candidate, and '
+        'digits left with one place. If you reach a cell with no candidate '
+        'at all, or a digit with nowhere to go in a row, column or box, the '
+        'supposition was wrong, so that candidate can be removed. This is '
+        'proof by contradiction, not guessing: you only ever remove a '
+        'candidate you have shown to be impossible. Following a single '
+        'digit this way is called Nishio.',
+    spot:
+        'Pick a cell with two candidates that touches other two-candidate '
+        'cells, so each step forces the next. Suppose one of its digits and '
+        'pencil in what follows. Keep the proof short: if it takes more than '
+        'a few steps, try another candidate.',
+    buildExample: () => _candidates({
+      // If r1c1 is 1, r1c5 becomes 3 and r5c1 becomes 4, which leaves
+      // nothing for r5c5.
+      _rc(1, 1): [1, 2],
+      _rc(1, 5): [1, 3],
+      _rc(5, 1): [1, 4],
+      _rc(5, 5): [3, 4],
     }),
   ),
 ];

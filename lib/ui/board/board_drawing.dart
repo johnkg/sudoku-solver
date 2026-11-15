@@ -87,7 +87,7 @@ void drawChainLinks(
 
   for (final link in links) {
     final from = markCenter(link.from, link.digit);
-    final to = markCenter(link.to, link.digit);
+    final to = markCenter(link.to, link.toDigit);
     final color = (link.strong ? scheme.primary : scheme.tertiary).withValues(
       alpha: _linkAlpha,
     );

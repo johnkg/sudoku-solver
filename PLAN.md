@@ -35,7 +35,7 @@ A plain backtracking solver is still included, but only for: checking a puzzle h
 | 3 Medium | Naked pair/triple, Hidden pair/triple |
 | 4 Hard | Naked/Hidden quad, X-Wing, Swordfish, Y-Wing (XY-Wing), Skyscraper |
 | 5 Expert | XYZ-Wing, W-Wing, Unique Rectangle, Simple Coloring, Jellyfish, X-Chain, XY-Chain |
-| 6 Master (not built) | Forcing chains, Alternating Inference Chains (AIC), Nishio |
+| 6 Master | Alternating Inference Chain (AIC), Forcing Chain (proof by contradiction, which covers Nishio) |
 
 Each level builds on ideas from the one before: first "only one place left", then "these digits are locked into a line", then "a group of cells shares a group of digits", then "patterns across rows and columns", then "chains of cause and effect".
 
@@ -56,8 +56,8 @@ Each level builds on ideas from the one before: first "only one place left", the
 
 Where things stand. The README has the how-to-run and the file layout.
 
-**Engine (`lib/engine/`)**: done for levels 1-5, 22 techniques, including
-X-Chain and XY-Chain. Every step carries a plain-language explanation. Also
+**Engine (`lib/engine/`)**: done for levels 1-6, 24 techniques, including
+X-Chain, XY-Chain, AIC and Forcing Chain. Every step carries a plain-language explanation. Also
 done: the backtracking checker, the rater (`ratePuzzle` finds the shortest
 easiest-first set of techniques that solves a puzzle; the last one is what the
 puzzle truly needs), the random puzzle generator, `puzzle_finder.dart`, and the
@@ -66,7 +66,7 @@ daily puzzle. Soundness tests replay puzzles against the true solution.
 **App (`lib/ui/` and friends)**:
 - Learn tab: a lesson per technique (`lib/lessons/lessons.dart`) with a worked
   before/after example found by the real engine, plus a quiz.
-- Practice tab: 42 curated puzzles (every technique has at least one), a daily
+- Practice tab: 72 curated puzzles (three per technique, two for Hidden Quad), a daily
   puzzle with a streak, random puzzles by level, and a puzzle built around a
   chosen technique.
 - Solve screen: play with notes, moves checked against the unique solution, a
@@ -86,14 +86,14 @@ daily puzzle. Soundness tests replay puzzles against the true solution.
   that changes everyone's daily puzzle.
 - Random, technique and custom puzzles are practice only: not saved, and they do
   not count towards unlocking.
-- About 15% of random unique puzzles still stall after level 5. They need
-  forcing chains or Nishio (level 6).
+- Fewer than 1% of random unique puzzles still stall after level 6. The
+  Forcing Chain only follows singles and gives up after 12 forced moves, so
+  its proofs stay short enough to explain.
 
 ## Next
 
-- Level 6: forcing chains, AIC, Nishio.
-- More curated puzzles per technique (Hidden Quad and Jellyfish have one each,
-  the rest two).
+- A third Hidden Quad puzzle (they are rare; the search found two).
+- AIC variants not built: grouped links and continuous loops.
 - Sharing results beyond the daily puzzle.
 - Release hygiene: a real Android/iOS application id (still `com.example`).
 

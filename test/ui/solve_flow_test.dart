@@ -41,7 +41,7 @@ void main() {
     });
 
     test('covers every level', () {
-      expect({for (final p in puzzleLibrary) p.level}, {1, 2, 3, 4, 5});
+      expect({for (final p in puzzleLibrary) p.level}, {1, 2, 3, 4, 5, 6});
     });
 
     test('every puzzle is solved step by step without a wrong move', () {
@@ -87,7 +87,7 @@ void main() {
 
     test('reports stuck when no technique applies', () {
       final stuck = SolveController(
-        '070004001000300090941060050006008000800210000030400000700100000200000800003900200',
+        '200500800080900701000007300904000000000701009020000050090060000006400200500300000',
       );
       var guard = 0;
       while (!stuck.stuck && guard++ < 500) {

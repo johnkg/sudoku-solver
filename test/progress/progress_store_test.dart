@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sudoku_solver/engine/engine.dart';
 import 'package:sudoku_solver/progress/progress_store.dart';
+import 'package:sudoku_solver/ui/levels.dart';
 import 'package:sudoku_solver/ui/puzzle_library.dart';
 import 'package:sudoku_solver/ui/unlocking.dart';
 
@@ -303,18 +304,18 @@ void main() {
       expect(isLevelUnlocked(store, 2), isTrue);
     });
 
-    test('every level up to 5 can be reached by practising each technique', () {
+    test('every level can be reached by practising each technique', () {
       for (final p in puzzleLibrary) {
         store.recordSolve(p.id, mistakes: 0, hints: 0);
       }
-      for (final level in [1, 2, 3, 4, 5]) {
+      for (final level in levelNames.keys) {
         expect(isLevelUnlocked(store, level), isTrue);
       }
     });
 
     test('unlock all opens everything', () {
       store.unlockAllLevels();
-      for (final level in [1, 2, 3, 4, 5]) {
+      for (final level in levelNames.keys) {
         expect(isLevelUnlocked(store, level), isTrue);
       }
     });
