@@ -29,32 +29,35 @@ void checkSolve(Board puzzle, Map<Technique, int> used) {
   }
 }
 
+bool _holds(Board board, int cell, int digit) =>
+    board.values[cell] == 0 && hasDigit(board.candidates[cell], digit);
+
 void checkLinks(Board board, Step step) {
   for (final link in step.links) {
     final reason = '${step.technique.label}: ${step.explanation}';
-    expect(
-      step.highlightCells,
-      containsAll([link.from, link.to]),
-      reason: reason,
-    );
+    expect(step.highlightCells, contains(link.from), reason: reason);
+    expect(step.highlightCells, contains(link.to), reason: reason);
     expect(board.values[link.from], 0, reason: reason);
     expect(board.values[link.to], 0, reason: reason);
     // Wings link a bivalue pivot by one of its digits; every other link joins
-    // two cells that both hold the digit.
+    // two candidates that are both still on the board.
     if (step.technique != Technique.yWing &&
         step.technique != Technique.xyzWing &&
         step.technique != Technique.xyChain) {
-      expect(
-        (board.candidates[link.from] >> (link.digit - 1)) & 1,
-        1,
-        reason: reason,
-      );
-      expect(
-        (board.candidates[link.to] >> (link.digit - 1)) & 1,
-        1,
-        reason: reason,
-      );
+      expect(_holds(board, link.from, link.digit), isTrue, reason: reason);
+      expect(_holds(board, link.to, link.toDigit), isTrue, reason: reason);
     }
+
+    if (link.from == link.to) {
+      // Two digits in one cell, which only an AIC links.
+      expect(step.technique, Technique.aic, reason: reason);
+      expect(link.toDigit, isNot(link.digit), reason: reason);
+      if (link.strong) {
+        expect(popCount(board.candidates[link.from]), 2, reason: reason);
+      }
+      continue;
+    }
+    expect(link.toDigit, link.digit, reason: reason);
     expect(Board.peers[link.from], contains(link.to), reason: reason);
 
     if (link.strong) {
@@ -63,15 +66,7 @@ void checkLinks(Board board, Step step) {
         (u) => u.cells.contains(link.from) && u.cells.contains(link.to),
       );
       final isStrong = shared.any(
-        (u) =>
-            u.cells
-                .where(
-                  (c) =>
-                      board.values[c] == 0 &&
-                      (board.candidates[c] >> (link.digit - 1)) & 1 == 1,
-                )
-                .length ==
-            2,
+        (u) => u.cells.where((c) => _holds(board, c, link.digit)).length == 2,
       );
       expect(isStrong, isTrue, reason: reason);
     }
@@ -79,12 +74,14 @@ void checkLinks(Board board, Step step) {
 }
 
 void main() {
-  test('chains were added after the techniques the daily puzzle uses', () {
+  test('later techniques were added after the ones the daily puzzle uses', () {
     expect(legacyTechniques, hasLength(20));
-    expect(defaultTechniques, hasLength(22));
+    expect(defaultTechniques, hasLength(24));
     expect(defaultTechniques.sublist(20).map((t) => t.technique), [
       Technique.xChain,
       Technique.xyChain,
+      Technique.aic,
+      Technique.forcingChain,
     ]);
   });
 
@@ -118,6 +115,8 @@ void main() {
     expect(used[Technique.xyChain], greaterThan(0));
     expect(used[Technique.skyscraper], greaterThan(0));
     expect(used[Technique.yWing], greaterThan(0));
+    expect(used[Technique.aic], greaterThan(0));
+    expect(used[Technique.forcingChain], greaterThan(0));
   });
 
   test('chain steps explain themselves and carry links', () {
@@ -143,7 +142,7 @@ void main() {
 
   test('a full solve with chains stays quick', () {
     final sw = Stopwatch()..start();
-    for (final entry in puzzleLibrary.where((p) => p.level == 5)) {
+    for (final entry in puzzleLibrary.where((p) => p.level >= 5)) {
       const Solver().solve(Board.parse(entry.text));
     }
     expect(sw.elapsed.inSeconds, lessThan(20));

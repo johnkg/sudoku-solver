@@ -18,7 +18,7 @@ just say "the answer is 7". Instead they say: "Look at this row. Only one
 square can hold a 7, because all the other squares are already taken. That
 trick is called a **Hidden Single**."
 
-That is this app. It knows 22 tricks (called **techniques**), sorted from
+That is this app. It knows 24 tricks (called **techniques**), sorted from
 easiest to hardest. It has four parts, which you reach from the bottom bar:
 
 | Tab | What it is, for a 10 year old |
@@ -57,7 +57,7 @@ button never breaks a Sudoku rule.
 
 ### Learning a trick
 
-1. **Learn tab** (`learn_tab.dart`) lists lessons grouped into 5 levels. A level
+1. **Learn tab** (`learn_tab.dart`) lists lessons grouped into 6 levels. A level
    is locked until you have solved a practice puzzle for the level below
    (`unlocking.dart`).
 2. Tap a lesson: **Lesson screen** (`lesson_screen.dart`) shows the idea, how to
@@ -120,7 +120,7 @@ Board with pencil marks (candidates)
  try technique 1 (easiest) -> found something? -> make a Step, apply it, start over
         | no
         v
- try technique 2 ... and so on up to technique 22
+ try technique 2 ... and so on up to technique 24
         | none worked
         v
  "stuck": the puzzle needs something harder than this app knows
@@ -186,10 +186,10 @@ files use.
 | `engine.dart` | One import that exports everything in the engine. UI files import this. |
 | `bits.dart` | Tiny helpers for candidate **bitmasks**. A cell's pencil marks are stored as nine on/off switches in one number. `digitBit`, `hasDigit`, `popCount`, `digitsOf`, `maxDigit`, `allDigitsMask`. |
 | `board.dart` | `Board`: 81 cells, each with a value or a set of candidates. Knows rows, columns, boxes (`Unit`), peers (cells that "see" each other), how to parse text, place a digit, apply a `Step`, and copy itself. `Board.size`, `Board.cellAt`, `Board.clampedCellAt`. |
-| `step.dart` | The vocabulary of a solve. `Technique` (the 22 tricks with their level and name), `Step` (one move: which technique, which cells, which digits placed or removed, and the plain-language explanation), `Placement`, `Elimination`, `ChainLink`. |
+| `step.dart` | The vocabulary of a solve. `Technique` (the 24 tricks with their level and name), `Step` (one move: which technique, which cells, which digits placed or removed, and the plain-language explanation), `Placement`, `Elimination`, `ChainLink`. |
 | `solver.dart` | `Solver`: tries the techniques easiest-first, returns the next `Step`, or runs all the way to a `SolveResult`. |
 | `backtracking.dart` | Brute-force search. Counts solutions (`countSolutions`) and finds the answer (`solveByBacktracking`). Used to check puzzles, never to teach. |
-| `rater.dart` | `ratePuzzle`: finds the shortest easiest-first set of techniques that solves a puzzle. The last one is what the puzzle truly needs, and gives its level 1-5. |
+| `rater.dart` | `ratePuzzle`: finds the shortest easiest-first set of techniques that solves a puzzle. The last one is what the puzzle truly needs, and gives its level 1-6. |
 | `generator.dart` | Makes random full grids and removes clues to make puzzles. Has its own shuffle so results never change between Dart versions. |
 | `puzzle_finder.dart` | Keeps generating puzzles until one is right: `findPuzzleOfLevel` (a level), `findPuzzleRequiring` (built around a technique), `findMomentOf` (a board partway through a solve where a technique is next). Shares one attempt loop and supports cancelling. |
 | `daily.dart` | `SeededRandom` (same numbers on every device), `dailyLevel`, `dailySeed`, `findDailyPuzzle`. **Changing this changes everyone's daily puzzle.** See [section 5](#the-daily-puzzle-is-pinned). |
@@ -211,6 +211,8 @@ files use.
 | `coloring.dart` | Skyscraper and Simple Coloring. |
 | `uniqueness.dart` | Unique Rectangle (types 1 and 2). |
 | `chains.dart` | X-Chain and XY-Chain. |
+| `aic.dart` | AIC (Alternating Inference Chain): a chain of candidates that may change digit along the way. |
+| `forcing_chain.dart` | Forcing Chain: suppose a candidate, follow the singles it forces, and remove it if the board breaks. |
 | `strong_links.dart` | Helper: finds the "exactly one of these two cells" pairs that chains and colouring use. |
 | `subsets.dart` | Helpers: all ways to pick *n* items, shared group sizes (`pairSize`, `tripleSize`, `quadSize`), `joinCells`. |
 
@@ -218,7 +220,7 @@ files use.
 
 | File | What it does |
 | --- | --- |
-| `lessons.dart` | `Lesson` (idea, how to spot it, tagline, and a function that builds the example board), the list of all 22 lessons, and `lessonFor(technique)`. |
+| `lessons.dart` | `Lesson` (idea, how to spot it, tagline, and a function that builds the example board), the list of all 24 lessons, and `lessonFor(technique)`. |
 
 ### `lib/progress/` and `lib/settings/`: what is remembered
 
@@ -252,7 +254,7 @@ files use.
 | `app.dart` | `SudokuApp`: theme, bottom bar (Learn, Practice, Solver), and the menu (cheat sheet, stats, settings, unlock all, reset). |
 | `theme.dart` | `buildTheme`: all colours and component styles, light and dark. |
 | `layout.dart` | Named sizes: the `Space` scale, radii, icon sizes, breakpoints, and `useSideBySide` (wide screens show the board next to its panel). |
-| `levels.dart` | Level names (Beginner to Expert) and one-line blurbs. |
+| `levels.dart` | Level names (Beginner to Master) and one-line blurbs. |
 | `navigation.dart` | `pushScreen` and `openScreen`: the one way to open a screen. |
 | `section.dart` | `SectionTitle` and the small icon tile used on long screens. |
 | `level_header.dart` | The numbered level heading with a lock, shared by Learn and Practice. |
@@ -278,7 +280,7 @@ files use.
 | File | What it does |
 | --- | --- |
 | `practice_tab.dart` | The Practice list: daily card, weak spots, random card, technique card, then curated puzzles by level. |
-| `puzzle_library.dart` | `PuzzleEntry` and the 42 curated puzzles, at least one per technique. |
+| `puzzle_library.dart` | `PuzzleEntry` and the 72 curated puzzles, three per technique (two for Hidden Quad). |
 | `practice_card.dart` | `PracticeCard` (the card layout) and `openPracticePuzzle` (opens a practice-only solve screen). |
 | `random_puzzle.dart` | The random-puzzle card and `playRandomPuzzle`. |
 | `technique_puzzle.dart` | The "practise a technique" card and `playTechniquePuzzle`. |
@@ -499,8 +501,9 @@ full checks on the new version, then merge.
   custom puzzles pass `recordProgress: false` to `SolveScreen`.
 - **Achievements are computed, not stored.** Reset clears them for free; to add
   one, add it to the list in `ui/achievements.dart`.
-- **About 15% of random unique puzzles stall after level 5.** They need forcing
-  chains (level 6, not built yet). `findPuzzleOfLevel` simply tries again.
+- **A few random puzzles (under 1%) still stall after level 6.** Forcing Chain
+  only follows singles, for at most 12 forced moves, to keep its proofs
+  explainable. `findPuzzleOfLevel` simply tries again.
 - **The photo scan is web only.** Anything that touches it must work with the
   stub, which returns nothing, so `scan/photo_scan.dart` picks the file by
   platform.

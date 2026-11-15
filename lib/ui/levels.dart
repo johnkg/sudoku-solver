@@ -5,6 +5,7 @@ const levelNames = {
   3: 'Medium',
   4: 'Hard',
   5: 'Expert',
+  6: 'Master',
 };
 
 const levelBlurbs = {
@@ -13,4 +14,5 @@ const levelBlurbs = {
   3: 'Groups of cells that share a group of digits.',
   4: 'Patterns that span several rows and columns.',
   5: 'Wings, colours, chains and uniqueness.',
+  6: 'Long chains that mix digits, and proof by contradiction.',
 };

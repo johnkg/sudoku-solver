@@ -66,7 +66,7 @@ Future<T?> _searchAttempts<T>({
   return whenExhausted?.call();
 }
 
-/// Generates random puzzles until one rates at exactly [level] (1-5) using
+/// Generates random puzzles until one rates at exactly [level] (1-6) using
 /// [techniques], and returns it. Returns null after [maxAttempts] tries or once
 /// [isCancelled] says to stop. [yieldTurn] runs between attempts (see
 /// [_searchAttempts]).

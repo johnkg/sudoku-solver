@@ -9,7 +9,7 @@ It runs on-device and offline. The engine is pure Dart with no server.
 
 ## What is in it
 
-- **Learn**: 22 lessons, one per technique, from Full House to XY-Chain. Each
+- **Learn**: 24 lessons, one per technique, from Full House to Forcing Chain. Each
   has a worked before/after example drawn on the board, plus a quiz.
 - **Practice**: curated puzzles per level, a daily puzzle (same for everyone,
   with a streak), random puzzles at a chosen level, and a puzzle built around a
