@@ -54,7 +54,8 @@ class StepPanel extends StatelessWidget {
     } else if (step != null) {
       content = switch (controller.hintLevel) {
         SolveController.hintNudge ||
-        SolveController.hintTechnique => _hintStage(context, step, controller),
+        SolveController.hintTechnique ||
+        SolveController.hintPattern => _hintStage(context, step, controller),
         _ => _fullMove(context, step, controller),
       };
     } else if (controller.stuck) {
@@ -64,9 +65,8 @@ class StepPanel extends StatelessWidget {
           Text('No technique applies', style: theme.textTheme.titleMedium),
           const SizedBox(height: Space.sm),
           Text(
-            'This puzzle needs something beyond the Level 5 techniques the '
-            'solver knows (for example forcing chains). Try undoing a step or '
-            'starting over.',
+            'This puzzle needs something beyond the techniques the solver '
+            'knows. Try undoing a step or starting over.',
             style: theme.textTheme.bodyLarge,
           ),
         ],
@@ -85,7 +85,8 @@ class StepPanel extends StatelessWidget {
           const SizedBox(height: Space.xs),
           Text(
             'Stuck? Tap Hint: first where to look, then the technique, '
-            'then the move. Hardest technique here: ${focus.label}.',
+            'then its cells, then the move. Hardest technique here: '
+            '${focus.label}.',
             style: theme.textTheme.bodyMedium,
           ),
         ],
@@ -98,7 +99,7 @@ class StepPanel extends StatelessWidget {
   }
 }
 
-/// Hint stages 1 and 2: where to look, then which technique.
+/// Hint stages 1 to 3: where to look, which technique, then its cells.
 Widget _hintStage(BuildContext context, Step step, SolveController controller) {
   final theme = Theme.of(context);
   final level = controller.hintLevel;
@@ -107,7 +108,7 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Text(
-        'Hint $level of 3',
+        'Hint $level of ${SolveController.hintMove}',
         style: theme.textTheme.labelLarge?.copyWith(
           color: theme.colorScheme.primary,
         ),
@@ -129,7 +130,9 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
         ),
         const SizedBox(height: Space.sm),
         Text(
-          lessonFor(step.technique).tagline,
+          level == SolveController.hintTechnique
+              ? '${_whereToUse(step)} Tap Another hint to see its cells.'
+              : lessonFor(step.technique).tagline,
           style: theme.textTheme.bodyLarge,
         ),
       ],
@@ -139,12 +142,12 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
         runSpacing: Space.xs,
         crossAxisAlignment: WrapCrossAlignment.center,
         children: [
-          if (level == SolveController.hintNudge)
+          if (level != SolveController.hintPattern)
             FilledButton.tonal(
               onPressed: controller.moreHelp,
               child: const Text('Another hint'),
             ),
-          if (level == SolveController.hintNudge)
+          if (level != SolveController.hintPattern)
             TextButton(
               onPressed: controller.showMove,
               child: const Text('Show the move'),
@@ -154,7 +157,7 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
               onPressed: controller.showMove,
               child: const Text('Show the move'),
             ),
-          if (level == SolveController.hintTechnique)
+          if (level != SolveController.hintNudge)
             TextButton(
               onPressed: () => openLesson(context, lessonFor(step.technique)),
               child: const Text('How it works'),
@@ -169,7 +172,15 @@ Widget _hintStage(BuildContext context, Step step, SolveController controller) {
   );
 }
 
-/// Hint stage 3: the full move, ready to apply.
+/// Stage 2 text: where the named technique applies, without its cells.
+String _whereToUse(Step step) {
+  final unit = hintUnit(step);
+  return unit == null
+      ? 'Look for it across the board.'
+      : 'Look for it in ${unit.name}.';
+}
+
+/// Hint stage 4: the full move, ready to apply.
 Widget _fullMove(BuildContext context, Step step, SolveController controller) {
   final theme = Theme.of(context);
   return Column(

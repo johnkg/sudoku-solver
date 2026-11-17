@@ -1,12 +1,13 @@
 import '../engine/engine.dart';
 
-/// The hint ladder shows a solver step in three stages, each giving away more:
+/// The hint ladder shows a solver step in four stages, each giving away more:
 ///
 /// 1. a nudge: where to look, without naming the technique,
-/// 2. the technique and the pattern's cells,
-/// 3. the full move, with what it changes.
+/// 2. the technique's name, with the board still showing only where to look,
+/// 3. the pattern's cells and digits,
+/// 4. the full move, with what it changes.
 ///
-/// These helpers build the first two stages from a real step.
+/// These helpers build the board views for stages 1 to 3 from a real step.
 
 /// The row, column, or box where [step] does its work, if there is one:
 /// the unit holding every cell the step touches. A box is preferred over a
@@ -70,7 +71,7 @@ String nudgeText(Step step) {
   return 'Look carefully at the pencil marks.';
 }
 
-/// Stage 1 board view: the unit tinted, nothing else.
+/// Stage 1 and 2 board view: the unit tinted, nothing else.
 Step nudgeView(Step step) {
   final unit = hintUnit(step);
   return Step(
@@ -80,7 +81,7 @@ Step nudgeView(Step step) {
   );
 }
 
-/// Stage 2 board view: the pattern's cells and digits, but not what the move
+/// Stage 3 board view: the pattern's cells and digits, but not what the move
 /// changes.
 Step patternView(Step step) => Step(
   technique: step.technique,

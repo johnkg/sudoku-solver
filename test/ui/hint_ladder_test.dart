@@ -104,7 +104,7 @@ void main() {
     late SolveController c;
     setUp(() => c = SolveController(warmUp.text));
 
-    test('climbs 1, 2, 3 and then stays at 3', () {
+    test('climbs 1, 2, 3, 4 and then stays at 4', () {
       expect(c.hintLevel, 0);
       c.findNextStep();
       expect(c.hintLevel, 1);
@@ -114,18 +114,35 @@ void main() {
       expect(c.hintLevel, 2);
       c.moreHelp();
       expect(c.hintLevel, 3);
+      c.moreHelp();
+      expect(c.hintLevel, 4);
       expect(c.shown, same(c.pending));
       c.moreHelp();
-      expect(c.hintLevel, 3);
+      expect(c.hintLevel, 4);
       expect(c.movesShown, 1);
       expect(c.hintsUsed, 1);
+    });
+
+    test('naming the technique still shows only where to look', () {
+      c.findNextStep();
+      final nudge = c.shown!;
+      c.moreHelp();
+
+      expect(c.hintLevel, SolveController.hintTechnique);
+      expect(c.shown!.highlightCells, nudge.highlightCells);
+      expect(c.shown!.highlightDigits, isEmpty);
+
+      c.moreHelp();
+      expect(c.hintLevel, SolveController.hintPattern);
+      expect(c.shown!.highlightDigits, isNotEmpty);
+      expect(c.shown!.placements, isEmpty);
     });
 
     test('showMove jumps to the full move once', () {
       c.findNextStep();
       c.showMove();
       c.showMove();
-      expect(c.hintLevel, 3);
+      expect(c.hintLevel, 4);
       expect(c.movesShown, 1);
     });
 
@@ -174,13 +191,21 @@ void main() {
     await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
     await tester.tap(find.byTooltip('Get a hint'));
     await tester.pumpAndSettle();
-    expect(find.text('Hint 1 of 3'), findsOneWidget);
+    expect(find.text('Hint 1 of 4'), findsOneWidget);
     expect(find.textContaining('Look at'), findsOneWidget);
     expect(find.text('Another hint'), findsOneWidget);
+    expect(find.text('How it works'), findsNothing);
 
     await tester.tap(find.text('Another hint'));
     await tester.pumpAndSettle();
-    expect(find.text('Hint 2 of 3'), findsOneWidget);
+    expect(find.text('Hint 2 of 4'), findsOneWidget);
+    expect(find.textContaining('Look for it'), findsOneWidget);
+    expect(find.text('Another hint'), findsOneWidget);
+    expect(find.text('How it works'), findsOneWidget);
+
+    await tester.tap(find.text('Another hint'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hint 3 of 4'), findsOneWidget);
     expect(find.text('Another hint'), findsNothing);
     expect(find.text('How it works'), findsOneWidget);
 

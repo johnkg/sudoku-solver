@@ -70,7 +70,7 @@ daily puzzle. Soundness tests replay puzzles against the true solution.
   puzzle with a streak, random puzzles by level, and a puzzle built around a
   chosen technique.
 - Solve screen: play with notes, moves checked against the unique solution, a
-  three-step hint ladder, undo, pause, a step-by-step guide, mistake limit.
+  four-step hint ladder, undo, pause, a step-by-step guide, mistake limit.
 - Solver tab: paste or type a puzzle, or scan one from a photo (web), and watch
   the walkthrough.
 - Progress (`lib/progress/`): stars (3 max, minus one for mistakes, one for

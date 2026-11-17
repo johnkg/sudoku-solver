@@ -308,7 +308,7 @@ files use.
 | `solve_screen.dart` | `SolveScreen`: wires the controller, clock, recorder and dialogs together. |
 | `solve_controller.dart` | `SolveController`: the game's state and rules (see the flow above). |
 | `saved_game.dart` | `SavedGame` and `Move`: how a game is written to and read back from storage, with checks that reject corrupt data. |
-| `hint_ladder.dart` | The three hint stages: `nudgeView`, `patternView`, then the full step. |
+| `hint_ladder.dart` | The four hint stages: `nudgeView` (stages 1 and 2), `patternView` (stage 3), then the full step. |
 | `solve/solve_recorder.dart` | Saves the game and records the result, unlocks and achievements. |
 | `solve/move_feedback.dart` | Haptic buzz for mistakes, completed units and moves. |
 | `solve/board_keys.dart` | Keyboard play: digits enter, arrows move. |

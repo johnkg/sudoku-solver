@@ -15,7 +15,7 @@ It runs on-device and offline. The engine is pure Dart with no server.
   with a streak), random puzzles at a chosen level, and a puzzle built around a
   technique you pick.
 - **Solve**: play with notes, mistakes checked against the unique solution, a
-  three-step hint ladder (where to look, which technique, the move), undo, and
+  four-step hint ladder (where to look, which technique, its cells, the move), undo, and
   a step-by-step guide.
 - **Solver**: paste or type any puzzle, or scan one from a photo (web only), and
   watch the walkthrough.

@@ -122,12 +122,12 @@ void main() {
 
       await tester.tap(find.byTooltip('Get a hint'));
       await tester.pumpAndSettle();
-      expect(find.text('Hint 1 of 3'), findsOneWidget);
+      expect(find.text('Hint 1 of 4'), findsOneWidget);
       expect(find.text('Apply'), findsNothing);
 
       await tester.tap(find.text('Another hint'));
       await tester.pumpAndSettle();
-      expect(find.text('Hint 2 of 3'), findsOneWidget);
+      expect(find.text('Hint 2 of 4'), findsOneWidget);
 
       await tester.tap(find.text('Show the move'));
       await tester.pumpAndSettle();

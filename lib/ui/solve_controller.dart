@@ -44,10 +44,12 @@ class SolveController extends ChangeNotifier {
 
   Step? _pending;
 
-  /// Stages of the hint ladder: where to look, which technique, the move.
+  /// Stages of the hint ladder: where to look, which technique, the pattern's
+  /// cells, the move.
   static const hintNudge = 1;
   static const hintTechnique = 2;
-  static const hintMove = 3;
+  static const hintPattern = 3;
+  static const hintMove = 4;
 
   int _hintLevel = 0;
   bool _stuck = false;
@@ -92,7 +94,7 @@ class SolveController extends ChangeNotifier {
   Step? get pending => _pending;
 
   /// How far up the hint ladder the player is: 0 none, 1 where to look,
-  /// 2 which technique, 3 the full move.
+  /// 2 which technique, 3 the pattern's cells, 4 the full move.
   int get hintLevel => _hintLevel;
 
   /// What the board should draw for the current hint stage.
@@ -100,8 +102,10 @@ class SolveController extends ChangeNotifier {
     final step = _pending;
     if (step == null) return null;
     return switch (_hintLevel) {
-      hintNudge => nudgeView(step),
-      hintTechnique => patternView(step),
+      // The technique's name gives away more than where to look, but still
+      // not which cells, so the board keeps showing only the unit.
+      hintNudge || hintTechnique => nudgeView(step),
+      hintPattern => patternView(step),
       _ => step,
     };
   }
