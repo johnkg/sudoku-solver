@@ -13,6 +13,7 @@ Future<void> main() async {
     SudokuApp(
       store: store,
       settings: settings,
+      showIntro: !settings.introSeen,
       initialPuzzle: puzzleFromUri(Uri.base),
     ),
   );

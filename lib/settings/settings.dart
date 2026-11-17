@@ -15,6 +15,7 @@ class Settings extends ChangeNotifier {
     settings._haptics = prefs.getBool(_hapticsKey) ?? true;
     settings._showClock = prefs.getBool(_clockKey) ?? true;
     settings._patterns = prefs.getBool(_patternsKey) ?? false;
+    settings._introSeen = prefs.getBool(_introSeenKey) ?? false;
     final limit = prefs.getInt(_limitKey);
     if (mistakeLimits.contains(limit)) settings._mistakeLimit = limit!;
     return settings;
@@ -24,6 +25,7 @@ class Settings extends ChangeNotifier {
   static const _clockKey = 'settings.showClock';
   static const _limitKey = 'settings.mistakeLimit';
   static const _patternsKey = 'settings.patterns';
+  static const _introSeenKey = 'settings.introSeen';
 
   /// The mistake limits to choose from. 0 means no limit.
   static const mistakeLimits = [noLimit, defaultMistakeLimit, lenientLimit];
@@ -36,6 +38,7 @@ class Settings extends ChangeNotifier {
   bool _haptics = true;
   bool _showClock = true;
   bool _patterns = false;
+  bool _introSeen = false;
   int _mistakeLimit = defaultMistakeLimit;
 
   bool get haptics => _haptics;
@@ -44,6 +47,9 @@ class Settings extends ChangeNotifier {
   /// Whether the board marks mistakes and moves with hatching and outlines as
   /// well as colour.
   bool get patterns => _patterns;
+
+  /// Whether the player has been through the first-run intro.
+  bool get introSeen => _introSeen;
 
   /// Mistakes allowed before the game offers to start over. 0 means no limit.
   int get mistakeLimit => _mistakeLimit;
@@ -63,6 +69,12 @@ class Settings extends ChangeNotifier {
   set patterns(bool value) {
     _patterns = value;
     _prefs?.setBool(_patternsKey, value);
+    notifyListeners();
+  }
+
+  set introSeen(bool value) {
+    _introSeen = value;
+    _prefs?.setBool(_introSeenKey, value);
     notifyListeners();
   }
 

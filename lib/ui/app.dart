@@ -7,6 +7,7 @@ import 'cheat_sheet_screen.dart';
 import 'confirm_dialog.dart';
 import 'learn_tab.dart';
 import 'navigation.dart';
+import 'onboarding_screen.dart';
 import 'practice_tab.dart';
 import 'settings_screen.dart';
 import 'solver_tab.dart';
@@ -18,6 +19,7 @@ class SudokuApp extends StatelessWidget {
     super.key,
     required this.store,
     this.initialPuzzle,
+    this.showIntro = false,
     Settings? settings,
   }) : settings = settings ?? Settings.memory();
 
@@ -26,6 +28,10 @@ class SudokuApp extends StatelessWidget {
 
   /// A puzzle from a shared link. The app opens on the Solver tab with it.
   final List<int>? initialPuzzle;
+
+  /// Whether to start with the intro, as on a first run. Not shown when the
+  /// app was opened from a shared puzzle link.
+  final bool showIntro;
 
   @override
   Widget build(BuildContext context) {
@@ -38,7 +44,7 @@ class SudokuApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: buildTheme(Brightness.light),
           darkTheme: buildTheme(Brightness.dark),
-          home: AppShell(initialPuzzle: initialPuzzle),
+          home: AppShell(initialPuzzle: initialPuzzle, showIntro: showIntro),
         ),
       ),
     );
@@ -49,9 +55,10 @@ enum _MenuAction { cheatSheet, stats, settings, unlockAll, reset }
 
 /// Two tabs: lessons to learn from, puzzles to practise on.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, this.initialPuzzle});
+  const AppShell({super.key, this.initialPuzzle, this.showIntro = false});
 
   final List<int>? initialPuzzle;
+  final bool showIntro;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -59,6 +66,16 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   late int index = widget.initialPuzzle == null ? 0 : 2;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.showIntro && widget.initialPuzzle == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) pushScreen(context, (_) => const OnboardingScreen());
+      });
+    }
+  }
 
   Future<void> _onMenu(_MenuAction action) async {
     final store = ProgressScope.read(context);

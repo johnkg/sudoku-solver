@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../settings/settings.dart';
 import 'layout.dart';
+import 'navigation.dart';
+import 'onboarding_screen.dart';
 import 'section.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -98,6 +100,18 @@ class SettingsScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: Space.lg),
+                ],
+              ),
+              const SectionTitle('Help'),
+              _Group(
+                children: [
+                  ListTile(
+                    key: const Key('show-intro'),
+                    leading: const Icon(Icons.waving_hand_outlined),
+                    title: const Text('Show the intro again'),
+                    onTap: () =>
+                        pushScreen(context, (_) => const OnboardingScreen()),
+                  ),
                 ],
               ),
               Padding(
