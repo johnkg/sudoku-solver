@@ -359,6 +359,7 @@ files use.
 | `solve.dart` | `dart run tool/solve.dart <puzzle>` prints a walkthrough in the terminal. |
 | `curate.dart` | Searches for new practice puzzles per technique and checks every step is sound. |
 | `check_coverage.dart` | Fails if line coverage is under a minimum. CI uses 90%. |
+| `make_icons.py` | Draws the app icon and writes every size for Android, iOS, web and Windows. Needs Pillow. |
 | `scan/` | Scripts for measuring photo-scan accuracy. |
 
 ### `web/scan/`: the photo reader
