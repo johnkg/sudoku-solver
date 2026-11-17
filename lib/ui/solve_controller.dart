@@ -318,7 +318,8 @@ class SolveController extends ChangeNotifier {
       wrong[cell] = digit;
       _say(
         'Not $digit. It breaks no rule yet, but the puzzle cannot be '
-        'finished with $digit in ${Board.cellName(cell)}.',
+        'finished with $digit in ${Board.cellName(cell)}.'
+        '${_techniqueHint(cell, digit)}',
         error: true,
       );
       return;
@@ -338,6 +339,32 @@ class SolveController extends ChangeNotifier {
     _push(null, note: true);
     marks[cell] ^= digitBit(digit);
     _clearMessage();
+  }
+
+  /// Most solver steps looked through for the technique behind a mistake.
+  /// Enough to cover a whole puzzle.
+  static const _maxStepsToExplainMistake = Board.cellCount;
+
+  /// A sentence naming the technique that would have shown the player why
+  /// [digit] does not go in [cell], or an empty string if the solver finds no
+  /// such step. It starts with a space, so it can follow another sentence.
+  String _techniqueHint(int cell, int digit) {
+    final trial = _board.copy();
+    var step = _solver.nextStep(trial);
+    for (var i = 0; step != null && i < _maxStepsToExplainMistake; i++) {
+      final label = step.technique.label;
+      if (step.placements.any((p) => p.cell == cell)) {
+        return ' A $label shows what goes in this cell.';
+      }
+      if (step.eliminations.any(
+        (e) => e.cell == cell && e.digits.contains(digit),
+      )) {
+        return ' A $label rules $digit out of this cell.';
+      }
+      trial.applyStep(step);
+      step = _solver.nextStep(trial);
+    }
+    return '';
   }
 
   String _whyNotCandidate(int cell, int digit) {

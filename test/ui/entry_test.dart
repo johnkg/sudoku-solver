@@ -46,6 +46,16 @@ void main() {
       expect(c.moveCount, 0);
     });
 
+    test('a legal but wrong digit names the technique that would show it', () {
+      c.enter(wrongButLegal);
+      final message = c.message!;
+
+      expect(message, startsWith('Not $wrongButLegal.'));
+      final labels = [for (final t in Technique.values) t.label];
+      expect(labels.any(message.contains), isTrue, reason: message);
+      expect(message, anyOf(contains('shows what goes'), contains('rules')));
+    });
+
     test('a wrong digit is shown in the cell until erased', () {
       c.enter(wrongButLegal);
       expect(c.wrong[cell], wrongButLegal);
