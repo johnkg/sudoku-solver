@@ -81,17 +81,33 @@ button never breaks a Sudoku rule.
 3. You tap a cell, then a digit. The controller checks it against the puzzle's
    one true solution:
    - Wrong digit: it is shown in red, counted as a mistake, and kept off the
-     board.
+     board. If it breaks no rule, the message names the technique that would
+     have shown why it is wrong.
    - Right digit: it is placed, your notes around it are cleaned up, and a
      finished row, column or box flashes.
-4. **Hints come in three steps** (`hint_ladder.dart`): first *where to look*, then
-   *which technique*, then *the exact move*. Asking for a hint counts against
+4. **Hints come in four steps** (`hint_ladder.dart`): first *where to look*, then
+   *which technique*, then *its cells*, then *the exact move*. Asking for a hint counts against
    your stars.
 5. Every change goes to `SolveRecorder` (`solve/solve_recorder.dart`). While you
    play, it saves the game so you can leave and come back. When you finish, it
    records stars, unlocks levels and checks for new achievements.
 6. Random, technique and custom puzzles are *practice only*: they are not saved
    and do not unlock anything.
+
+### Coming back to a technique
+
+Every quiz answer and every hint the player needed is saved per technique.
+Each technique also gets a review date (`review_schedule.dart`): a day after
+the first try, then twice as long after each right answer, and back to a day
+after a mistake. The **Practice** tab shows up to five techniques that are due
+(`review_card.dart`).
+
+### First visit
+
+`main.dart` passes `showIntro: !settings.introSeen` to `SudokuApp`. The
+first time, `AppShell` opens the three-page intro (`onboarding_screen.dart`).
+Finishing or skipping it sets `introSeen`. A shared puzzle link skips it, and
+Settings can show it again.
 
 ### The daily puzzle
 
@@ -228,7 +244,8 @@ files use.
 | --- | --- |
 | `progress/progress_store.dart` | `ProgressStore`: everything saved about the player: solved puzzles and stars (`PuzzleRecord`), games in progress, daily results and streak, right/wrong counts per technique (`TechniqueStat`), whether levels were unlocked. Saved with `shared_preferences`. `ProgressStore.memory()` is the in-memory version for tests. |
 | `progress/progress_scope.dart` | `ProgressScope`: makes the store available to every widget and rebuilds screens when it changes. Use `ProgressScope.of(context)` to watch, `.read(context)` to just use. |
-| `settings/settings.dart` | `Settings` and `SettingsScope`: haptics, mistake limit, show clock, patterns on the board. Saved to the device. |
+| `progress/review_schedule.dart` | `reviewIntervalAfter`: how long to wait before reviewing a technique again (1 day, doubling to 32, reset by a mistake). |
+| `settings/settings.dart` | `Settings` and `SettingsScope`: haptics, mistake limit, show clock, patterns on the board, whether the intro was seen. Saved to the device. |
 
 ### `lib/scan/`: photo to puzzle (web only)
 
@@ -285,10 +302,12 @@ files use.
 | `random_puzzle.dart` | The random-puzzle card and `playRandomPuzzle`. |
 | `technique_puzzle.dart` | The "practise a technique" card and `playTechniquePuzzle`. |
 | `daily_puzzle.dart` | The daily card, `playDailyPuzzle`, and `dailyDateLabel`. |
-| `daily_calendar.dart` | Month calendar with solved days filled in (on the stats screen). |
+| `daily_calendar.dart` | Month calendar with solved days filled in (on the stats screen). Earlier days can be tapped to replay them. |
 | `search_dialog.dart` | `runSearchWithDialog`: shows "Looking for a puzzle…" with Cancel while a search runs. |
 | `weak_spots.dart` | `weakSpots`: techniques you get wrong most, with thresholds as named constants. |
 | `weak_spots_card.dart` | The card that shows them. |
+| `review.dart` | `dueForReview`: the techniques due for a refresher today, most urgent first. |
+| `review_card.dart` | The Practice card that lists them, each with a Quiz button. |
 | `unlocking.dart` | `isLevelUnlocked` and related rules. |
 
 **The board**
@@ -350,7 +369,8 @@ files use.
 | `digit_keys.dart` | `DigitKeyRow` (the 1-9 buttons) and `digitOfKey` (keyboard digit). |
 | `stats_screen.dart` | Totals, streak, fastest times, calendar and achievements. |
 | `achievements.dart` | The list of awards; whether each is earned is computed from progress, never stored. |
-| `settings_screen.dart` | The settings page. |
+| `settings_screen.dart` | The settings page, with a button to see the intro again. |
+| `onboarding_screen.dart` | The first-run intro: three pages, Skip, and "Start learning". |
 
 ### `tool/`: command-line helpers
 
@@ -491,6 +511,9 @@ full checks on the new version, then merge.
 
 <a id="the-daily-puzzle-is-pinned"></a>
 
+- **The daily puzzle has its own clue floors.** `clueFloorsFor` (random and
+  technique puzzles) can be retuned freely; `_dailyClueFloorsFor` in
+  `engine/daily.dart` is a frozen copy and must not change.
 - **The daily puzzle is pinned.** It is made from the date with a seeded
   generator and rated with `legacyTechniques`, and tests pin specific dates. If
   you change the generator, `SeededRandom`, the clue floors or the legacy

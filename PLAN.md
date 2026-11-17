@@ -71,6 +71,15 @@ daily puzzle. Soundness tests replay puzzles against the true solution.
   chosen technique.
 - Solve screen: play with notes, moves checked against the unique solution, a
   four-step hint ladder, undo, pause, a step-by-step guide, mistake limit.
+- Review: each technique has a spaced-repetition schedule (a day after the
+  first try, doubling on each right answer up to 32 days, reset by a wrong one).
+  The Practice tab offers up to five that are due. The schedule moves once a
+  day, so a five-question quiz is one step.
+- Intro: a three-page first-run tour, remembered in `Settings.introSeen`, shown
+  only when `main.dart` asks for it.
+- Past daily puzzles can be replayed from the calendar. They are practice only,
+  so the streak and daily record cannot be changed after the fact.
+- A rejected digit names the technique that would have shown why.
 - Solver tab: paste or type a puzzle, or scan one from a photo (web), and watch
   the walkthrough.
 - Progress (`lib/progress/`): stars (3 max, minus one for mistakes, one for
@@ -92,6 +101,9 @@ daily puzzle. Soundness tests replay puzzles against the true solution.
 
 ## Next
 
+- Random Level 2-3 puzzles use sparse grids (clue floors 0, 22, 24). The daily
+  puzzle keeps its own frozen floors in `daily.dart`, so retuning random
+  puzzles never changes it.
 - A third Hidden Quad puzzle (they are rare; the search found two).
 - AIC variants not built: grouped links and continuous loops.
 - Sharing results beyond the daily puzzle.

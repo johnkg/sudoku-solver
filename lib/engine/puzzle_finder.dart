@@ -23,13 +23,15 @@ class FoundPuzzle {
 /// How many puzzles a search tries before giving up.
 const defaultMaxAttempts = 3000;
 
-/// Clue floors worth trying for [level]. Puzzles with more clues tend to be
-/// easier, so low levels start from fuller grids. A floor of 0 removes every
-/// clue it can.
+/// Clue floors worth trying for [level]. Only level 1 needs a fuller grid:
+/// puzzles that need a technique beyond singles are rare above about 28
+/// clues, so the rest search sparse grids. A floor of 0 removes every clue it
+/// can.
+///
+/// The daily puzzle does not use this table: see `dailyClueFloorsFor`.
 List<int> clueFloorsFor(int level) => switch (level) {
   1 => const [40, 46, 52, 58],
-  2 => const [34, 38, 42],
-  3 => const [26, 30, 34],
+  2 || 3 => const [0, 22, 24],
   4 => const [0, 24, 28],
   _ => const [0, 0, 24],
 };
@@ -69,16 +71,17 @@ Future<T?> _searchAttempts<T>({
 /// Generates random puzzles until one rates at exactly [level] (1-6) using
 /// [techniques], and returns it. Returns null after [maxAttempts] tries or once
 /// [isCancelled] says to stop. [yieldTurn] runs between attempts (see
-/// [_searchAttempts]).
+/// [_searchAttempts]). The clue floors default to [clueFloorsFor].
 Future<FoundPuzzle?> findPuzzleOfLevel(
   int level,
   Random random, {
   int maxAttempts = defaultMaxAttempts,
+  List<int>? clueFloors,
   List<SolvingTechnique> techniques = defaultTechniques,
   bool Function()? isCancelled,
   Future<void> Function()? yieldTurn,
 }) {
-  final floors = clueFloorsFor(level);
+  final floors = clueFloors ?? clueFloorsFor(level);
   return _searchAttempts(
     maxAttempts: maxAttempts,
     isCancelled: isCancelled,
