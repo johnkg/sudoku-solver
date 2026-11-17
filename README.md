@@ -12,15 +12,18 @@ It runs on-device and offline. The engine is pure Dart with no server.
 - **Learn**: 24 lessons, one per technique, from Full House to Forcing Chain. Each
   has a worked before/after example drawn on the board, plus a quiz.
 - **Practice**: curated puzzles per level, a daily puzzle (same for everyone,
-  with a streak), random puzzles at a chosen level, and a puzzle built around a
-  technique you pick.
+  with a streak, and earlier days can be replayed from the calendar), random
+  puzzles at a chosen level, a puzzle built around a technique you pick, and a
+  daily review of techniques you are due to refresh.
 - **Solve**: play with notes, mistakes checked against the unique solution, a
-  three-step hint ladder (where to look, which technique, the move), undo, and
-  a step-by-step guide.
+  four-step hint ladder (where to look, which technique, its cells, the move), undo, and
+  a step-by-step guide. A rejected digit names the technique that would have
+  shown why.
 - **Solver**: paste or type any puzzle, or scan one from a photo (web only), and
   watch the walkthrough.
 - **Progress**: stars, unlocking by level, achievements, stats and weak spots,
-  saved on the device.
+  saved on the device. A short intro greets first-time players (and can be
+  replayed from Settings).
 
 The technique ladder is in [PLAN.md](PLAN.md). For a tour of every file and how
 to maintain the code, read [docs/CODEBASE_GUIDE.md](docs/CODEBASE_GUIDE.md).

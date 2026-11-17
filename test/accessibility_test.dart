@@ -6,6 +6,7 @@ import 'package:sudoku_solver/progress/progress_store.dart';
 import 'package:sudoku_solver/settings/settings.dart';
 import 'package:sudoku_solver/ui/app.dart';
 import 'package:sudoku_solver/ui/board_view.dart';
+import 'package:sudoku_solver/ui/onboarding_screen.dart';
 import 'package:sudoku_solver/ui/solve_screen.dart';
 import 'package:sudoku_solver/ui/walkthrough_screen.dart';
 
@@ -131,6 +132,10 @@ void main() {
           await tester.tap(find.text('Statistics'));
           await tester.pumpAndSettle();
           expect(tester.takeException(), isNull, reason: 'statistics');
+
+          await tester.pumpWidget(testApp(const OnboardingScreen()));
+          await tester.pumpAndSettle();
+          expect(tester.takeException(), isNull, reason: 'intro');
 
           await tester.pumpWidget(testApp(SolveScreen(puzzle: warmUp)));
           await tester.pumpAndSettle();

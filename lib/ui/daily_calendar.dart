@@ -5,11 +5,20 @@ import 'layout.dart';
 
 /// A month at a time, with the days the daily puzzle was solved filled in.
 class DailyCalendar extends StatefulWidget {
-  const DailyCalendar({super.key, required this.solved, required this.today});
+  const DailyCalendar({
+    super.key,
+    required this.solved,
+    required this.today,
+    this.onPlayDay,
+  });
 
   /// Days solved, as `2026-10-10`.
   final Set<String> solved;
   final DateTime today;
+
+  /// Called when the player taps a day before today, to play that day's
+  /// puzzle again. Without it the days cannot be tapped.
+  final ValueChanged<DateTime>? onPlayDay;
 
   @override
   State<DailyCalendar> createState() => _DailyCalendarState();
@@ -113,34 +122,42 @@ class _DailyCalendarState extends State<DailyCalendar> {
                       final solved = widget.solved.contains(formatDayKey(date));
                       final isToday = date == today;
                       final future = date.isAfter(today);
+                      final onPlay = widget.onPlayDay;
+                      final playable = onPlay != null && date.isBefore(today);
                       return Semantics(
+                        button: playable,
+                        hint: playable ? 'Play this day again' : null,
                         label:
                             '${monthName(month)} $day'
                             '${solved ? ', solved' : ''}',
-                        child: Container(
-                          key: Key('cal-day-${formatDayKey(date)}'),
-                          margin: const EdgeInsets.all(_dayMargin),
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: solved ? theme.colorScheme.primary : null,
-                            border: isToday
-                                ? Border.all(
-                                    color: theme.colorScheme.primary,
-                                    width: todayRingWidth,
-                                  )
-                                : null,
-                          ),
-                          alignment: Alignment.center,
-                          child: FittedBox(
-                            child: Text(
-                              '$day',
-                              style: theme.textTheme.labelMedium?.copyWith(
-                                fontWeight: solved ? FontWeight.w700 : null,
-                                color: solved
-                                    ? theme.colorScheme.onPrimary
-                                    : future
-                                    ? theme.colorScheme.outline
-                                    : null,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: playable ? () => onPlay(date) : null,
+                          child: Container(
+                            key: Key('cal-day-${formatDayKey(date)}'),
+                            margin: const EdgeInsets.all(_dayMargin),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: solved ? theme.colorScheme.primary : null,
+                              border: isToday
+                                  ? Border.all(
+                                      color: theme.colorScheme.primary,
+                                      width: todayRingWidth,
+                                    )
+                                  : null,
+                            ),
+                            alignment: Alignment.center,
+                            child: FittedBox(
+                              child: Text(
+                                '$day',
+                                style: theme.textTheme.labelMedium?.copyWith(
+                                  fontWeight: solved ? FontWeight.w700 : null,
+                                  color: solved
+                                      ? theme.colorScheme.onPrimary
+                                      : future
+                                      ? theme.colorScheme.outline
+                                      : null,
+                                ),
                               ),
                             ),
                           ),

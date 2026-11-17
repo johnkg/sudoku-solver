@@ -13,6 +13,7 @@ void main() {
       expect(settings.haptics, isTrue);
       expect(settings.showClock, isTrue);
       expect(settings.mistakeLimit, 3);
+      expect(settings.introSeen, isFalse);
     });
 
     test('are remembered between runs', () async {
@@ -21,12 +22,14 @@ void main() {
       first
         ..haptics = false
         ..showClock = false
+        ..introSeen = true
         ..mistakeLimit = 5;
 
       final second = await Settings.load();
       expect(second.haptics, isFalse);
       expect(second.showClock, isFalse);
       expect(second.mistakeLimit, 5);
+      expect(second.introSeen, isTrue);
     });
 
     test('ignore a saved limit that is not on offer', () async {

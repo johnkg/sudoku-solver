@@ -44,10 +44,12 @@ class SolveController extends ChangeNotifier {
 
   Step? _pending;
 
-  /// Stages of the hint ladder: where to look, which technique, the move.
+  /// Stages of the hint ladder: where to look, which technique, the pattern's
+  /// cells, the move.
   static const hintNudge = 1;
   static const hintTechnique = 2;
-  static const hintMove = 3;
+  static const hintPattern = 3;
+  static const hintMove = 4;
 
   int _hintLevel = 0;
   bool _stuck = false;
@@ -92,7 +94,7 @@ class SolveController extends ChangeNotifier {
   Step? get pending => _pending;
 
   /// How far up the hint ladder the player is: 0 none, 1 where to look,
-  /// 2 which technique, 3 the full move.
+  /// 2 which technique, 3 the pattern's cells, 4 the full move.
   int get hintLevel => _hintLevel;
 
   /// What the board should draw for the current hint stage.
@@ -100,8 +102,10 @@ class SolveController extends ChangeNotifier {
     final step = _pending;
     if (step == null) return null;
     return switch (_hintLevel) {
-      hintNudge => nudgeView(step),
-      hintTechnique => patternView(step),
+      // The technique's name gives away more than where to look, but still
+      // not which cells, so the board keeps showing only the unit.
+      hintNudge || hintTechnique => nudgeView(step),
+      hintPattern => patternView(step),
       _ => step,
     };
   }
@@ -314,7 +318,8 @@ class SolveController extends ChangeNotifier {
       wrong[cell] = digit;
       _say(
         'Not $digit. It breaks no rule yet, but the puzzle cannot be '
-        'finished with $digit in ${Board.cellName(cell)}.',
+        'finished with $digit in ${Board.cellName(cell)}.'
+        '${_techniqueHint(cell, digit)}',
         error: true,
       );
       return;
@@ -334,6 +339,32 @@ class SolveController extends ChangeNotifier {
     _push(null, note: true);
     marks[cell] ^= digitBit(digit);
     _clearMessage();
+  }
+
+  /// Most solver steps looked through for the technique behind a mistake.
+  /// Enough to cover a whole puzzle.
+  static const _maxStepsToExplainMistake = Board.cellCount;
+
+  /// A sentence naming the technique that would have shown the player why
+  /// [digit] does not go in [cell], or an empty string if the solver finds no
+  /// such step. It starts with a space, so it can follow another sentence.
+  String _techniqueHint(int cell, int digit) {
+    final trial = _board.copy();
+    var step = _solver.nextStep(trial);
+    for (var i = 0; step != null && i < _maxStepsToExplainMistake; i++) {
+      final label = step.technique.label;
+      if (step.placements.any((p) => p.cell == cell)) {
+        return ' A $label shows what goes in this cell.';
+      }
+      if (step.eliminations.any(
+        (e) => e.cell == cell && e.digits.contains(digit),
+      )) {
+        return ' A $label rules $digit out of this cell.';
+      }
+      trial.applyStep(step);
+      step = _solver.nextStep(trial);
+    }
+    return '';
   }
 
   String _whyNotCandidate(int cell, int digit) {

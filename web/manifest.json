@@ -1,10 +1,10 @@
 {
     "name": "Sudoku Technique Teacher",
-    "short_name": "Sudoku",
+    "short_name": "Sudoku Teacher",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#FEF7FF",
-    "theme_color": "#3F51B5",
+    "background_color": "#EEF1F7",
+    "theme_color": "#2A4BFF",
     "description": "Learn Sudoku techniques by solving puzzles with step-by-step hints.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,

@@ -65,6 +65,17 @@ int dailySeed(DateTime date) =>
 const _yearPlace = 10000;
 const _monthPlace = 100;
 
+/// The clue floors the daily search tries for each level. A frozen copy: they
+/// decide which puzzle a date gives, so improving the tables used for random
+/// puzzles must not change them.
+List<int> _dailyClueFloorsFor(int level) => switch (level) {
+  1 => const [40, 46, 52, 58],
+  2 => const [34, 38, 42],
+  3 => const [26, 30, 34],
+  4 => const [0, 24, 28],
+  _ => const [0, 0, 24],
+};
+
 /// How many puzzles the daily search may try before giving up. Far more than
 /// any day needs.
 const dailyMaxAttempts = 20000;
@@ -81,6 +92,7 @@ Future<FoundPuzzle?> findDailyPuzzle(
   dailyLevel(date),
   SeededRandom(dailySeed(date)),
   maxAttempts: dailyMaxAttempts,
+  clueFloors: _dailyClueFloorsFor(dailyLevel(date)),
   techniques: legacyTechniques,
   isCancelled: isCancelled,
   yieldTurn: yieldTurn,

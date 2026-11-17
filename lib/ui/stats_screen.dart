@@ -6,6 +6,7 @@ import '../progress/progress_store.dart' show ProgressStore, PuzzleRecord;
 import '../util/text.dart' show formatClock;
 import 'achievements.dart';
 import 'daily_calendar.dart';
+import 'daily_puzzle.dart' show playPastDailyPuzzle;
 import 'layout.dart';
 import 'levels.dart';
 import 'puzzle_library.dart';
@@ -119,6 +120,7 @@ class StatsScreen extends StatelessWidget {
                       DailyCalendar(
                         solved: store.dailyRecords.keys.toSet(),
                         today: store.today,
+                        onPlayDay: (date) => playPastDailyPuzzle(context, date),
                       ),
                       const SizedBox(height: Space.xs),
                       Text(
@@ -126,6 +128,15 @@ class StatsScreen extends StatelessWidget {
                         'Best ${store.bestDailyStreak}',
                         key: const Key('streak-line'),
                         style: theme.textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: Space.xs),
+                      Text(
+                        'Tap an earlier day to play its puzzle again. It is '
+                        'practice only and does not change your streak.',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
