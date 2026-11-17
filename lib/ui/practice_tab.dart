@@ -8,6 +8,7 @@ import 'level_header.dart';
 import 'levels.dart';
 import 'navigation.dart';
 import 'puzzle_library.dart';
+import 'review_card.dart';
 import 'random_puzzle.dart';
 import 'solve_screen.dart';
 import 'stars.dart';
@@ -49,6 +50,7 @@ class PracticeTab extends StatelessWidget {
               ),
             ),
             const DailyPuzzleCard(),
+            const ReviewCard(),
             const WeakSpotsCard(),
             RandomPuzzleCard(
               isUnlocked: (level) => isLevelUnlocked(store, level),

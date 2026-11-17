@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../util/text.dart';
+import 'review_schedule.dart';
 
 /// How well the player solved a puzzle.
 class PuzzleRecord {
@@ -56,20 +57,58 @@ class PuzzleRecord {
 
 /// How often the player got a technique right when asked to spot or apply it.
 class TechniqueStat {
-  const TechniqueStat(this.right, this.wrong);
+  const TechniqueStat(
+    this.right,
+    this.wrong, {
+    this.lastTried,
+    this.intervalDays = 0,
+  });
 
-  factory TechniqueStat.fromJson(Map<String, Object?> json) =>
-      TechniqueStat(json['right']! as int, json['wrong']! as int);
+  factory TechniqueStat.fromJson(Map<String, Object?> json) => TechniqueStat(
+    json['right']! as int,
+    json['wrong']! as int,
+    lastTried: json['lastTried'] as String?,
+    intervalDays: json['intervalDays'] as int? ?? 0,
+  );
 
   final int right;
   final int wrong;
+
+  /// The day of the latest try that moved the review schedule, such as
+  /// `2026-10-10`. Null for stats saved before reviews existed.
+  final String? lastTried;
+
+  /// Days to wait after [lastTried] before this technique is due for review.
+  final int intervalDays;
+
+  /// The day this technique is next due for review, or null if it never was
+  /// scheduled, in which case it is due now.
+  DateTime? get dueOn {
+    final last = lastTried == null ? null : DateTime.tryParse(lastTried!);
+    return last == null
+        ? null
+        : DateTime(last.year, last.month, last.day + intervalDays);
+  }
+
+  /// Whether it is time to review this technique on [today].
+  bool isDueOn(DateTime today) {
+    final due = dueOn;
+    return attempts > 0 &&
+        (due == null ||
+            !due.isAfter(DateTime(today.year, today.month, today.day)));
+  }
 
   int get attempts => right + wrong;
 
   /// Share of attempts that went right, 1 when there are none yet.
   double get accuracy => attempts == 0 ? 1 : right / attempts;
 
-  Map<String, Object?> toJson() => {'right': right, 'wrong': wrong};
+  Map<String, Object?> toJson() => {
+    'right': right,
+    'wrong': wrong,
+    'lastTried': ?lastTried,
+    'intervalDays': intervalDays,
+  };
 }
 
 /// What the player has done: puzzles solved, games in progress, and whether
@@ -203,9 +242,21 @@ class ProgressStore extends ChangeNotifier {
   /// or got wrong or needed help with.
   void recordTechnique(String name, {required bool right}) {
     final old = _techniques[name] ?? const TechniqueStat(0, 0);
+    final today = dayKey(_now());
+
+    // A day moves the review schedule once: by its first right answer, or by
+    // any wrong one. Further right answers the same day change nothing.
+    var interval = old.intervalDays;
+    var lastTried = old.lastTried;
+    if (!right || lastTried != today) {
+      interval = reviewIntervalAfter(current: interval, right: right);
+      lastTried = today;
+    }
     _techniques[name] = TechniqueStat(
       old.right + (right ? 1 : 0),
       old.wrong + (right ? 0 : 1),
+      lastTried: lastTried,
+      intervalDays: interval,
     );
     _prefs?.setString(
       _techniquesKey,
