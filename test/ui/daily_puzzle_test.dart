@@ -246,4 +246,64 @@ void main() {
     );
     expect(find.byKey(const Key('share-result')), findsNothing);
   });
+
+  group('replaying an earlier day', () {
+    final wednesday = DateTime(2026, 10, 14);
+
+    Future<void> openStats(WidgetTester tester, ProgressStore store) async {
+      await tester.pumpWidget(SudokuApp(store: store));
+      await tester.tap(find.byTooltip('Progress options'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Statistics'));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('plays that day\'s puzzle without recording anything', (
+      tester,
+    ) async {
+      phone(tester);
+      final store = ProgressStore.memory(now: () => wednesday);
+      await openStats(tester, store);
+
+      await tester.tap(find.byKey(const Key('cal-day-2026-10-12')));
+      await tester.pump();
+      await pumpUntilFound(tester, find.text('Daily · Mon, Oct 12'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Daily · Mon, Oct 12'), findsOneWidget);
+      final controllerBoard = tester.widget<BoardView>(find.byType(BoardView));
+      expect(controllerBoard.board.toDigits(), mondayPuzzle);
+
+      // Finishing it leaves the streak and the daily record alone.
+      final solution = solveByBacktracking(Board.parse(mondayPuzzle))!;
+      for (var cell = 0; cell < Board.cellCount; cell++) {
+        if (mondayPuzzle[cell] == '0') {
+          await playMove(tester, cell, solution.values[cell]);
+        }
+      }
+      await tester.pumpAndSettle();
+      expect(store.dailyRecord('2026-10-12'), isNull);
+      expect(store.dailyStreak, 0);
+      expect(store.dailyPuzzleText('2026-10-12'), isNull);
+    });
+
+    testWidgets('today and days to come cannot be tapped', (tester) async {
+      phone(tester);
+      await openStats(tester, ProgressStore.memory(now: () => wednesday));
+
+      await tester.tap(find.byKey(const Key('cal-day-2026-10-14')));
+      await tester.tap(find.byKey(const Key('cal-day-2026-10-20')));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Preparing'), findsNothing);
+      expect(find.byType(BoardView), findsNothing);
+    });
+
+    testWidgets('the calendar says what a tap does', (tester) async {
+      phone(tester);
+      await openStats(tester, ProgressStore.memory(now: () => wednesday));
+
+      expect(find.textContaining('Tap an earlier day'), findsOneWidget);
+    });
+  });
 }

@@ -54,6 +54,30 @@ Future<void> playDailyPuzzle(BuildContext context) async {
   openScreen(navigator, (_) => SolveScreen(puzzle: entry, dailyKey: key));
 }
 
+/// Plays the daily puzzle of an earlier [date] again. It is practice only:
+/// not saved, and it does not change the streak or the daily record.
+Future<void> playPastDailyPuzzle(BuildContext context, DateTime date) async {
+  final navigator = Navigator.of(context);
+  final label = dailyDateLabel(date);
+  final found = await runSearchWithDialog(
+    context,
+    message: 'Preparing the puzzle for $label…',
+    search: (isCancelled) => findDailyPuzzle(date, isCancelled: isCancelled),
+  );
+  if (found == null) return;
+
+  final entry = PuzzleEntry(
+    id: 'daily-replay-${formatDayKey(date)}',
+    title: 'Daily · $label',
+    text: found.text,
+    technique: found.rating.required!,
+  );
+  openScreen(
+    navigator,
+    (_) => SolveScreen(puzzle: entry, recordProgress: false),
+  );
+}
+
 /// A card on the Practice tab: today's puzzle, its level, and the streak.
 class DailyPuzzleCard extends StatelessWidget {
   const DailyPuzzleCard({super.key});
