@@ -107,7 +107,6 @@ daily puzzle. Soundness tests replay puzzles against the true solution.
 - A third Hidden Quad puzzle (they are rare; the search found two).
 - AIC variants not built: grouped links and continuous loops.
 - Sharing results beyond the daily puzzle.
-- Release hygiene: a real Android/iOS application id (still `com.example`).
 
 ## Testing approach
 
